@@ -1,75 +1,87 @@
-module Graph
+module Traversal
+
+open Uri
+open FSharpx
+open FSharpx.Option
 open VDS.RDF
-open Store
+open VDS.RDF.Parsing
+open System.IO
 
-type Literal =
-    | Literal of string
+type Graph = 
+  | Graph of IGraph
+  static member from (s : string) = 
+    let g = new VDS.RDF.Graph()
+    let p = TurtleParser()
+    use sr = new StreamReader(s)
+    p.Load(g, sr)
+    Graph g
 
-type Node =
-    | Uri of IUriNode
-    | Blank of IBlankNode
-    | Literal of ILiteralNode
-with static member fromVDS (n:INode) =
-    match n with
-        | :? IUriNode as n -> Node.Uri n
-        | :? ILiteralNode as n -> Node.Literal n
-        | :? IBlankNode as n -> Node.Blank n
-        | _ -> failwith (sprintf "Unknown node %A" (n.GetType ()))
+let fromSubject g u = 
+  match g with
+  | Graph g -> 
+    g.GetUriNode(u |> Uri.toSys)
+    |> g.GetTriplesWithSubject
+    |> Seq.groupBy (fun t -> t.Subject)
+    |> Seq.exactlyOne //This sucks
+    |> (fun (s, tx) -> 
+    (Subject(Node.from s)), 
+    [ for t in tx -> 
+        (Predicate(Node.from t.Predicate), Object(Node.from t.Subject)) ])
 
-type Subject =
-    | Subject of Node
+let asTriples x = 
+  match x with
+  | (s, px) -> 
+    [ for (p, o) in px -> (s, p, o) ]
 
-type Predicate =
-    | Predicate of Node
+(*Triples for Predicate p*)
+let pred p sx = 
+  match sx with
+  | (s, px) -> 
+    px
+    |> Seq.filter (function 
+         | Predicate p', _ -> p = Predicate p')
+    |> Seq.map (fun (p, o) -> (s, p, o))
 
-type Object =
-    | Object of Node
-
-type Triple =
-    | Triple of (Subject * Predicate * Object)
-    with static member fromVDS (t:VDS.RDF.Triple) =
-        Triple (Subject ( Node.fromVDS t.Subject ),Predicate (Node.fromVDS t.Predicate),Object (Node.fromVDS t.Object))
-
-
-let graphTriples s =
-    match s with
-        | Store.Memory g ->
-        g.Triples
-        |> Seq.map Triple.fromVDS
-
-let tripleMatchingSubject s sub =
-    match s with
-        | Store.Memory g ->
-        match sub with
-            | Subject (Node.Uri u) -> g.GetTriplesWithSubject u
-
-let tripleWithPredicateObject s pre ob =
-    match s with
-        | Store.Memory g ->
-        match pre,ob with
-            | Node.Uri pre,Node.Uri ob -> g.GetTriplesWithPredicateObject (pre,ob)
-
-
-let rec walk<'a> (f:Triple -> 'a -> 'a) (t:Triple) (a:'a) =
-    let a' = f t a
-    let traverse tx =
-        tx |> Seq.map Triple.fromVDS
-        |> Seq.fold (fun a'' t -> walk f t a'') a'
+let traverse p (sx : Statements) : Statements seq = 
+  let traverse t = 
     match t with
-        | Triple (_,_,Object ( Node.Uri o )) ->
-            o.Graph.GetTriplesWithSubject o
-            |> traverse
-        | Triple (_,_,Object ( Node.Blank o )) ->
-            o.Graph.GetTriplesWithSubject o
-            |> traverse
-        | _ -> a'
+    | (_, _, Object(Node.Uri(Uri.VDS vds))) -> 
+      fromSubject (Graph vds.Graph) (Uri.VDS vds) |> Option.Some
+    | _ -> None
+  pred p sx
+  |> Seq.map traverse
+  |> Seq.filter Option.isSome
+  |> Seq.map Option.get
 
-let (|UriIs|_|) n s =
-    match n with
-        | Node.Uri n' when (string n') = s -> Some n
-        | _ -> None
+let traverseFunctional p sx = (traverse p sx) |> Seq.head
+let (==>) sx p = sx |> Seq.collect (traverse p)
+let (=?>) sx p c = sx ==> p |> Seq.filter c
+let (.>) sx p = sx |> Seq.collect (pred p)
 
-let (|RdfType|_|) n =
-    match n with
-        | UriIs n' when ( ns.rdf + "type" ) -> Some n
-        | _ -> None
+let mapSubject tx f = 
+  [ for t in tx do
+      match t with
+      | (Subject s, _, _) -> yield f s ]
+
+let mapPredicate tx f = 
+  [ for t in tx do
+      match t with
+      | (_, Predicate p, _) -> yield f p ]
+
+let mapObject tx f = 
+  [ for t in tx do
+      match t with
+      | (_, _, Object o) -> yield f o ]
+
+let (<*-->) = mapSubject
+let (<-*->) = mapPredicate
+let (<--*>) = mapObject
+(*Fold for statements about a subject*)
+let foldS<'a> f (sx : Statements) (a : 'a) = asTriples sx |> List.fold f a
+(*Map statements about a subject to 'a*)
+let mapS<'a> f (t : Statements) (a : 'a) = asTriples t |> List.map f
+
+module Constraints = 
+  let only = Seq.head
+  let someof x = x
+  let max n x = x
