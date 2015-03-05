@@ -1,6 +1,6 @@
 module Traversal
 
-open Uri
+open Graph
 open FSharpx
 open FSharpx.Option
 open VDS.RDF
@@ -12,9 +12,12 @@ type Graph =
   static member from (s : string) =
     let g = new VDS.RDF.Graph()
     let p = TurtleParser()
-    use sr = new StreamReader(s)
+    use sr = new StringReader(s)
     p.Load(g, sr)
     Graph g
+
+type Traversal<'a> =
+| Traversal of (Statements list list * 'a)
 
 let fromSubject u g =
   match g with
@@ -46,7 +49,7 @@ let traverse p (sx : Statements) : Statements seq =
   let traverse t =
     match t with
     | (_, _, Object(Node.Uri(Uri.VDS vds))) ->
-      fromSubject (Uri.VDS vds) (Graph vds.Graph)  |> Option.Some
+      fromSubject (Uri.VDS vds) (Graph vds.Graph) |> Option.Some
     | _ -> None
   pred p sx
   |> Seq.map traverse

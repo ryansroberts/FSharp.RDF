@@ -1,8 +1,7 @@
 module FSharp.RDF.Tests
 
-open FSharp.RDF
 open NUnit.Framework
-open Uri
+open Graph
 open Traversal
 open System.IO
 
@@ -57,14 +56,16 @@ let functionalProperties = """
 :item3 rdf:type :type3;
        :pr3 "avalue"^^xsd:string
 """
-open Uri
+
+open Store
+
 [<Test>]
-let ``Traverse functional properties`` () =
-  let g =Graph.from functionalProperties
+let ``Traverse functional properties``() =
+  let g = Graph.from functionalProperties
   let s = Uri.from "http://testing.stuff/ns#item1"
-  let pr1  = Predicate.from "http://testing.stuff/ns#pr1"
-  let pr2  = Predicate.from "http://testing.stuff/ns#pr2"
-  let pr3  = Predicate.from "http://testing.stuff/ns#pr3"
+  let pr1 = Predicate.from "http://testing.stuff/ns#pr1"
+  let pr2 = Predicate.from "http://testing.stuff/ns#pr2"
+  let pr3 = Predicate.from "http://testing.stuff/ns#pr3"
   let sx = fromSubject s g
-  let avalue = [sx] ==> pr1 ==> pr2 .> pr3 <--*> string
-  Assert.AreEqual (avalue,"avalue")
+  let avalue = [ sx ] ==> pr1 ==> pr2 .> pr3 <--*> string
+  Assert.AreEqual(avalue, "avalue")

@@ -45,9 +45,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Uri.fs" />
+    <Compile Include="Assertion.fs" />
+    <Compile Include="Namespace.fs" />
     <Compile Include="Store.fs" />
     <Compile Include="ResultGraph.fs" />
-    <Compile Include="Library.fs" />
+    <Compile Include="ResultSet.fs" />
     <None Include="Script.fsx" />
   </ItemGroup>
   <PropertyGroup>
