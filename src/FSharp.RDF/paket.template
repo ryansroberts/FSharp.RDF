@@ -1,0 +1,6 @@
+type project
+id FSharp.RDF
+version 1.0
+authors Ryan Roberts
+description
+       FSharp interface to dotnetrdf 

@@ -33,7 +33,7 @@ let loadFile (s : string) =
   let g = new Graph()
   match s.StartsWith("http") with
   | true -> g.LoadFromUri(System.Uri s)
-  | false -> g.LoadFromFile s
+  | _ -> g.LoadFromFile s
   Memory g
 
 let loadTtl (sr : System.IO.StreamReader) =

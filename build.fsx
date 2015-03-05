@@ -44,7 +44,7 @@ let authors = [ "Ryan Roberts" ]
 // Tags for your project (for NuGet package)
 let tags = ""
 
-// File system information 
+// File system information
 let solutionFile  = "FSharp.RDF.sln"
 
 // Pattern specifying assemblies to be tested using NUnit
@@ -52,7 +52,7 @@ let testAssemblies = "tests/**/bin/Release/*Tests*.dll"
 
 // Git configuration (used for publishing documentation in gh-pages branch)
 // The profile where the project is posted
-let gitOwner = "ryansroberts" 
+let gitOwner = "ryansroberts"
 let gitHome = "https://github.com/" + gitOwner
 
 // The name of the project on GitHub
@@ -153,26 +153,6 @@ Target "SourceLink" (fun _ ->
 #endif
 
 // --------------------------------------------------------------------------------------
-// Build a NuGet package
-
-Target "NuGet" (fun _ ->
-    NuGet (fun p ->
-        { p with
-            Authors = authors
-            Project = project
-            Summary = summary
-            Description = description
-            Version = release.NugetVersion
-            ReleaseNotes = String.Join(Environment.NewLine, release.Notes)
-            Tags = tags
-            OutputPath = "bin"
-            AccessKey = getBuildParamOrDefault "nugetkey" ""
-            Publish = hasBuildParam "nugetkey"
-            Dependencies = [] })
-        ("nuget/" + project + ".nuspec")
-)
-
-// --------------------------------------------------------------------------------------
 // Generate the documentation
 
 Target "GenerateReferenceDocs" (fun _ ->
@@ -219,7 +199,7 @@ Target "GenerateHelpDebug" (fun _ ->
     generateHelp' true true
 )
 
-Target "KeepRunning" (fun _ ->    
+Target "KeepRunning" (fun _ ->
     use watcher = new FileSystemWatcher(DirectoryInfo("docs/content").FullName,"*.*")
     watcher.EnableRaisingEvents <- true
     watcher.Changed.Add(fun e -> generateHelp false)
@@ -239,7 +219,7 @@ Target "GenerateDocs" DoNothing
 
 let createIndexFsx lang =
     let content = """(*** hide ***)
-// This block of code is omitted in the generated HTML documentation. Use 
+// This block of code is omitted in the generated HTML documentation. Use
 // it to define helpers that you do not want to show in the documentation.
 #I "../../../bin"
 
@@ -301,17 +281,22 @@ Target "Release" (fun _ ->
 
     Branches.tag "" release.NugetVersion
     Branches.pushTag "" "origin" release.NugetVersion
-    
+
     // release on github
     createClient (getBuildParamOrDefault "github-user" "") (getBuildParamOrDefault "github-pw" "")
-    |> createDraft gitOwner gitName release.NugetVersion (release.SemVer.PreRelease <> None) release.Notes 
-    // TODO: |> uploadFile "PATH_TO_FILE"    
+    |> createDraft gitOwner gitName release.NugetVersion (release.SemVer.PreRelease <> None) release.Notes
+    // TODO: |> uploadFile "PATH_TO_FILE"
     |> releaseDraft
     |> Async.RunSynchronously
 )
 
-Target "BuildPackage" DoNothing
-
+Target "BuildPackage" (fun _ ->
+  [
+   ("mono",".paket/paket.exe pack output .")
+   ("mono",".paket/paket.exe push url www.nuget.org file $(ls *.nupkg)")
+  ]
+  |> List.iter (fun (v,a) -> Shell.Exec (v,args=a) |> ignore)
+)
 // --------------------------------------------------------------------------------------
 // Run all targets by default. Invoke 'build <Target>' to override
 
@@ -326,12 +311,11 @@ Target "All" DoNothing
   ==> "All"
   =?> ("ReleaseDocs",isLocalBuild && not isMono)
 
-"All" 
+"All"
 #if MONO
 #else
   =?> ("SourceLink", Pdbstr.tryFind().IsSome )
 #endif
-  ==> "NuGet"
   ==> "BuildPackage"
 
 "CleanDocs"
@@ -344,7 +328,7 @@ Target "All" DoNothing
 
 "GenerateHelp"
   ==> "KeepRunning"
-    
+
 "ReleaseDocs"
   ==> "Release"
 
