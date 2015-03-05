@@ -8,5 +8,6 @@ nuget Nuget.CommandLine
 nuget FAKE
 nuget SourceLink.Fake
 nuget dotnetrdf
+nuget unquote
 
 github fsharp/FAKE modules/Octokit/Octokit.fsx

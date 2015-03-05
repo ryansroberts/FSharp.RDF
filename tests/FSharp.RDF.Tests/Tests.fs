@@ -4,6 +4,7 @@ open NUnit.Framework
 open Graph
 open Traversal
 open System.IO
+open Swensen.Unquote
 
 (*Fucking about*)
 
@@ -54,7 +55,7 @@ let functionalProperties = """
        :pr2 :item3 .
 
 :item3 rdf:type :type3;
-       :pr3 "avalue"^^xsd:string
+       :pr3 "avalue"^^xsd:string .
 """
 
 let someOfProperties = """
@@ -68,16 +69,16 @@ let someOfProperties = """
        :pr1 :item2 .
 
 :item2 rdf:type :type2;
-       :pr2 :item3 .
-       :pr2 :item4 .
+       :pr2 :item3 ;
+       :pr2 :item4 ;
        :pr2 :item5 .
 
 :item3 rdf:type :type3;
-       :pr3 "1"^^xsd:string
-:item3 rdf:type :type3;
-       :pr3 "2"^^xsd:string
-:item3 rdf:type :type3;
-       :pr3 "3"^^xsd:string
+       :pr3 "1"^^xsd:string .
+:item4 rdf:type :type3;
+       :pr3 "2"^^xsd:string .
+:item5 rdf:type :type3;
+       :pr3 "3"^^xsd:string .
 """
 let item1 = Uri.from "http://testing.stuff/ns#item1"
 let pr1 = Predicate.from "http://testing.stuff/ns#pr1"
@@ -87,18 +88,24 @@ let pr3 = Predicate.from "http://testing.stuff/ns#pr3"
 open Store
 
 [<Test>]
-let ``Traverse functional properties``() =
+let ``Extract from functional properties``() =
   let g = Graph.from functionalProperties
   let sx = fromSubject item1 g
-  let avalue = [ sx ] ==> pr1 ==> pr2 .> pr3 <--*> string
-  Assert.AreEqual(avalue, ["avalue"])
+  let avalue = [ sx ] ==> pr1
+                      ==> pr2 .> pr3
+                      <--*> Literal.mapString
+                      |> List.map Option.get
+  test <@ avalue = ["avalue"] @>
 
 [<Test>]
-let ``Traverse nonfunctional properties``() =
-  let g = Graph.from functionalProperties
+let ``Extract from nonfunctional properties``() =
+  let g = Graph.from someOfProperties
   let sx = fromSubject item1 g
-  let avalue = [ sx ] ==> pr1 ==> pr2 .> pr3 <--*> string
-  Assert.AreEqual(avalue, ["1";"2";"3"])
+  let avalue = [ sx ] ==> pr1
+                      ==> pr2 .> pr3
+                      <--*> Literal.mapInt
+                      |> List.map Option.get
+  test <@ avalue = [1;2;3] @>
 
 
 

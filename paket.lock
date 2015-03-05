@@ -27,9 +27,10 @@ NUGET
     Octokit (0.7.2)
       Microsoft.Net.Http
     SourceLink.Fake (0.4.2)
+    Unquote (2.2.2)
     VDS.Common (1.4.0)
 GITHUB
   remote: fsharp/FAKE
   specs:
-    modules/Octokit/Octokit.fsx (585c008b4cfce177b0114f6749904e05a471508f)
+    modules/Octokit/Octokit.fsx (9c61ff79fce68a16fc4b027c8a931d89d7fb7c6d)
       Octokit

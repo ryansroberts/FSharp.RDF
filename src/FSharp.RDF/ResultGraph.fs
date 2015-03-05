@@ -29,7 +29,7 @@ let fromSubject u g =
     |> (fun (s, tx) ->
     (Subject(Node.from s)),
     [ for t in tx ->
-        (Predicate(Node.from t.Predicate), Object(Node.from t.Subject)) ])
+        (Predicate(Node.from t.Predicate), Object(Node.from t.Object)) ])
 
 let asTriples x =
   match x with
@@ -37,12 +37,11 @@ let asTriples x =
     [ for (p, o) in px -> (s, p, o) ]
 
 (*Triples for Predicate p*)
-let pred p sx =
-  match sx with
-  | (s, px) ->
+let pred p (sx:Statements) : Graph.Triple seq =
+  match p,sx with
+  | Predicate n,(s, px) ->
     px
-    |> Seq.filter (function
-         | Predicate p', _ -> p = Predicate p')
+    |> Seq.filter (function | Predicate n', _ -> n = n')
     |> Seq.map (fun (p, o) -> (s, p, o))
 
 let traverse p (sx : Statements) : Statements seq =
@@ -88,3 +87,15 @@ module Constraints =
   let only = Seq.head
   let someof x = x
   let max n x = x
+
+module Literal =
+  open VDS.RDF
+  let mapL f n =
+    match n with
+      | Node.Literal l -> Some (f l)
+      | _ -> None
+
+  let mapString = mapL (fun l -> l.Value)
+  let mapInt = mapL (fun l -> int l.Value)
+  let mapDateTime = mapL (fun l -> System.DateTime.Parse l.Value)
+  let mapDateTimeOffset = mapL (fun l -> System.DateTimeOffset.Parse l.Value)
