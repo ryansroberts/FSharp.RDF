@@ -291,9 +291,11 @@ Target "Release" (fun _ ->
 )
 
 Target "BuildPackage" (fun _ ->
+  let n = Environment.GetEnvironmentVariable "TRAVIS_BUILD_NUMBER"
+  let v = sprintf "1.0.%s" n
   [
-   ("mono",".paket/paket.exe pack output .")
-   ("mono",".paket/paket.exe push url www.nuget.org file $(ls *.nupkg)")
+   ("mono",".paket/paket.exe pack output . version " + v)
+   ("mono",sprintf ".paket/paket.exe push url www.nuget.org file Sharp.RDF.%s.nupkg" v)
   ]
   |> List.iter (fun (v,a) -> Shell.Exec (v,args=a) |> ignore)
 )
