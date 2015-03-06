@@ -90,22 +90,9 @@ open Store
 [<Test>]
 let ``Extract from functional properties``() =
   let g = Graph.from functionalProperties
-  let sx = fromSubject item1 g
-  let avalue = [ sx ] ==> pr1
-                      ==> pr2 .> pr3
-                      <--*> Literal.mapString
-                      |> List.map Option.get
-  test <@ avalue = ["avalue"] @>
 
-[<Test>]
-let ``Extract from nonfunctional properties``() =
-  let g = Graph.from someOfProperties
-  let sx = fromSubject item1 g
-  let avalue = [ sx ] ==> pr1
-                      ==> pr2 .> pr3
-                      <--*> Literal.mapInt
-                      |> List.map Option.get
-  test <@ avalue = [1;2;3] @>
+  let literalString p = parser {
+       let! x = p
+    }
 
-
-
+  ()

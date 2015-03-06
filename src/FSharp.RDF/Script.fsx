@@ -7,11 +7,11 @@
 #load "Namespace.fs"
 #load "Store.fs"
 
-open Graph
 open Store
 open Traversal
 open Swensen.Unquote
 
+open Graph
 let functionalProperties = """
 @prefix : <http://testing.stuff/ns#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
@@ -21,17 +21,29 @@ let functionalProperties = """
 
 :item1 rdf:type :type1.
 :item1 :pr1 :item2 .
+:item1 :pr3 "1"^^xsd:string .
 
 :item2 rdf:type :type2 .
 :item2 :pr2 :item3 .
+:item2 :pr3 "2"^^xsd:string .
 
 :item3 rdf:type :type3.
-:item3 :pr3 "avalue"^^xsd:string .
+:item3 :pr3 "3"^^xsd:string .
 """
 let g = Graph.from functionalProperties
-let s = Uri.from "http://testing.stuff/ns#item1"
+let item1 = Uri.from "http://testing.stuff/ns#item1"
 let pr1 = Predicate.from "http://testing.stuff/ns#pr1"
 let pr2 = Predicate.from "http://testing.stuff/ns#pr2"
 let pr3 = Predicate.from "http://testing.stuff/ns#pr3"
-let sx = fromSubject s g
-let avalue = [ sx ] ==> pr1 ==> pr2 .> pr3 <--*> Literal.mapString
+
+let sx = fromSubject item1 g
+
+let getPredicateValue = parse {
+  for p in sx do
+  predicate(pr3)
+  yield p
+}
+
+getPredicateValue (sx)
+
+
