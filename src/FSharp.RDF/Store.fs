@@ -9,7 +9,7 @@ open VDS.RDF.Parsing
 open Graph
 open Namespace
 
-let parser = SparqlQueryParser()
+let private parser = SparqlQueryParser()
 
 type Store =
   | Memory of IGraph
@@ -26,8 +26,7 @@ type ResultSet =
 type ResultGraph =
   | ResultGraph of IGraph
 
-let defaultUri = null :> System.Uri
-let loadGph (g : Graph) = Store.Memory g
+let private defaultUri = null :> System.Uri
 
 let loadFile (s : string) =
   let g = new Graph()

@@ -2,7 +2,6 @@ module FSharp.RDF.Tests
 
 open NUnit.Framework
 open Graph
-open Traversal
 open System.IO
 open Swensen.Unquote
 
@@ -81,18 +80,36 @@ let someOfProperties = """
        :pr3 "3"^^xsd:string .
 """
 let item1 = Uri.from "http://testing.stuff/ns#item1"
+let item3 = Uri.from "http://testing.stuff/ns#item3"
 let pr1 = Predicate.from "http://testing.stuff/ns#pr1"
 let pr2 = Predicate.from "http://testing.stuff/ns#pr2"
 let pr3 = Predicate.from "http://testing.stuff/ns#pr3"
 
 open Store
+open Walk
 
 [<Test>]
-let ``Extract from functional properties``() =
+let ``Extract from data property of resource``() =
   let g = Graph.from functionalProperties
-
-  let literalString p = parser {
-       let! x = p
+  let root = fromSubject item3 g
+  let item1P = walk {
+    for s in root do
+    o pr3 Literal.mapString
     }
+  let rx = parsers.run item1P []
 
-  ()
+  test <@ Some [Some "avalue"] = rx @>
+
+[<Test>]
+let ``Traverse object property that is not asserted``() =
+  let g = Graph.from functionalProperties
+  let root = fromSubject item3 g
+  let item1P = walk {
+    for s in root do
+    traverse pr1
+    }
+  let rx = parsers.run item1P []
+
+  test <@ [] = rx @>
+
+
