@@ -21,29 +21,37 @@ let functionalProperties = """
 
 :item1 rdf:type :type1.
 :item1 :pr1 :item2 .
-:item1 :pr3 "1"^^xsd:string .
+:item1 :value "1"^^xsd:string .
+:item1 :pr4 "2"^^xsd:string .
 
 :item2 rdf:type :type2 .
 :item2 :pr2 :item3 .
-:item2 :pr3 "2"^^xsd:string .
+:item2 :value "2"^^xsd:string .
 
 :item3 rdf:type :type3.
-:item3 :pr3 "3"^^xsd:string .
+:item3 :value "3"^^xsd:string .
 """
 let g = Graph.from functionalProperties
 let item1 = Uri.from "http://testing.stuff/ns#item1"
 let pr1 = Predicate.from "http://testing.stuff/ns#pr1"
 let pr2 = Predicate.from "http://testing.stuff/ns#pr2"
-let pr3 = Predicate.from "http://testing.stuff/ns#pr3"
+let value = Predicate.from "http://testing.stuff/ns#value"
+let pr4 = Predicate.from "http://testing.stuff/ns#pr4"
 
 open Combinators
 
-let typeValue =
+let next p = walk {
+  traverse p
+  }
+
+let typeValue3 =
   walk {
-    for s in (fromSubject item1 g) do
-    mapO pr3 xsd.string
+    traverse pr1
+    mapO value xsd.string
+    traverse pr2
+    mapO value xsd.string
     }
 
-let px = walker.run typeValue []
-let (Some p) = px
-p |> List.ofSeq
+let px = walker.run (typeValue3) (fromSubject item1 g)
+px |> List.ofSeq |> List.map (List.ofSeq)
+

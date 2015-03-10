@@ -68,7 +68,6 @@ module walker =
 
   //Statements for predicate p
   let forPredicate p = pred ((function | (p', _) ->
-                              printfn "mapPredicate %A %A" p p'
                               p = p'))
 
   //Applies f to the subject component of statements
@@ -93,16 +92,17 @@ module walker =
   //Applies f to the object component of all resources
   let mapObjects f = Seq.collect (mapObject f)
 
-  //Traverses all object properties for statements, returning a list of reachable statements
-  let mapNext (S (s,px)) =
-      seq { printfn "------Traversing %A" s
-            for p in px do
-                match p with
-                | (_, Object(Node.Uri(Uri.VDS vds))) ->
-                    yield! bySubject (Uri.VDS vds) (vds.Graph) |> triplesToStatement
-                | _ -> () }
+  //Traverses object properties with predicate pr
+  let mapNext pr sx =
+    let (S (s,px)) = (forPredicate pr) sx
+    seq {printfn "------Traversing %A" s
+         for p in px do
+            match p with
+            | (_, Object(Node.Uri(Uri.VDS vds))) ->
+                yield! bySubject (Uri.VDS vds) (vds.Graph) |> triplesToStatement
+            | _ -> () }
 
-  let mapAllNext = Seq.map mapNext >> Seq.concat
+  let mapAllNext pr = Seq.map (mapNext pr) >> Seq.concat
 
   let fromSeq sx = W(fun sx' -> seq {yield ((), sx) })
 
@@ -111,15 +111,18 @@ module walker =
   let bind f (W w) =
     W(fun sx ->
       seq{ for (v, sx) in w sx do
+           printfn "Bind val - %A" v
            let (W w') = f v
            yield! w' sx })
   //Parser that does nothing
   let zero() = W(fun sx -> Seq.empty)
-  //Apply to all results
-  let combine (W w) (W w') = W(fun sx -> Seq.concat[w sx;w' sx])
+  //Results of first walker, followed by results of second
+  let combine (W w) (W w') =
+    W(fun sx ->
+      let sx' = w sx |> Seq.collect snd
+      Seq.concat [(w sx);(w' sx')]
+      )
 
-  //Produce a walker for statements where predicate is p
-  let predicate p (W w) = W(fun sx -> w (sx |> Seq.map (forPredicate p)))
   //Produce a walker where producing f applied to object component of statements
   let mapO pr f (W w) =
     W(fun sx ->
@@ -127,20 +130,19 @@ module walker =
            let s' = Seq.map (forPredicate pr) s
            yield (mapObjects f s',sx)})
 
-  let traverse pr (W w) = W(fun sx -> w (mapAllNext sx))
+  let traverse pr (W w) = W(fun sx -> w (mapAllNext pr sx))
 
   let run (W w) =
     w
     >> Seq.map fst
-    >> Seq.tryPick Some
 
 module xsd =
   open VDS.RDF
 
   let mapL f n =
-    match n with
-    | Node.Literal l -> Some(f l)
-    | _ -> None
+        match n with
+        | Node.Literal l -> Some (f l)
+        | _ -> None
 
   let string = mapL (fun l -> l.Value)
   let int = mapL (fun l -> int l.Value)
@@ -155,7 +157,7 @@ type WalkBuilder() =
   member this.Combine(x, y) = walker.combine x y
   member this.For(t, f) = walker.bind f t
   //Lifted for that takes a statement seq
-  member this.For(sx, f) = W(fun sx' -> seq{yield (f sx, sx)})
+  member this.For(sx, f) = W(fun _ -> seq{yield (f sx, sx)})
 
   member x.Delay(f) =
     W(fun sx ->
@@ -181,4 +183,6 @@ module Combinators =
     walk {
       yield! oneOrMore p
       yield []
-    }
+      }
+
+  let (<+>) p q = walker.combine p q

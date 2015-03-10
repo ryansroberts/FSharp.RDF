@@ -58,37 +58,34 @@ let ``Extract from data property of resource``() =
   let g = Graph.from functionalProperties
   let root = fromSubject item3 g
   let item1P = walk {
-    for s in root do
     mapO pr3 xsd.string
     }
-  let rx = walker.run item1P []
+  let rx = walker.run item1P root
 
-  test <@ rx = None @>
+  test <@ rx = Seq.empty @>
 
 [<Fact>]
 let ``Traverse object property that is not asserted``() =
   let g = Graph.from functionalProperties
   let root = fromSubject item3 g
   let item1P = walk {
-    for s in root do
     traverse pr1
     mapO pr3 xsd.string
     }
-  let rx = walker.run item1P []
+  let rx = walker.run item1P root
 
-  test <@ None = rx @>
+  test <@ rx = Seq.empty @>
 
 [<Fact>]
 let ``One or more combinator succeeds on match`` () =
   let g = Graph.from functionalProperties
   let root = fromSubject item3 g
   let item1P = walk {
-    for s in root do
     traverse pr1
     mapO pr3 xsd.string
     }
 
   let oneOrMoreItem1P = Combinators.oneOrMore item1P
-  let rx = walker.run oneOrMoreItem1P []
+  let rx = walker.run oneOrMoreItem1P root
 
-  test <@ rx = None @>
+  test <@ rx = Seq.empty @>
