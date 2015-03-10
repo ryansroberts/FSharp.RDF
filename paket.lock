@@ -5,9 +5,9 @@ NUGET
       HtmlAgilityPack (>= 1.4.9) - framework: >= net35, >= net35, >= net40, >= net40
       Newtonsoft.Json (>= 6.0.6)
       VDS.Common (1.4.0)
-    FAKE (3.17.14)
-    FSharp.Compiler.Service (0.0.85)
-    FSharp.Formatting (2.7.4)
+    FAKE (3.20.0)
+    FSharp.Compiler.Service (0.0.86)
+    FSharp.Formatting (2.7.5)
       FSharp.Compiler.Service (>= 0.0.82)
       FSharpVSPowerTools.Core (>= 1.7.0)
     FSharpVSPowerTools.Core (1.7.0)
@@ -22,15 +22,16 @@ NUGET
       Microsoft.Bcl.Build (>= 1.0.14)
     Newtonsoft.Json (6.0.8)
     NuGet.CommandLine (2.8.3)
-    NUnit (2.6.4)
     NUnit.Runners (2.6.4)
-    Octokit (0.7.2)
+    Octokit (0.7.3)
       Microsoft.Net.Http
     SourceLink.Fake (0.4.2)
     Unquote (2.2.2)
     VDS.Common (1.4.0)
+    xunit (1.9.2)
+    xunit.runners (1.9.2)
 GITHUB
   remote: fsharp/FAKE
   specs:
-    modules/Octokit/Octokit.fsx (9c61ff79fce68a16fc4b027c8a931d89d7fb7c6d)
+    modules/Octokit/Octokit.fsx (7f50662c04cbf7318cfeec63c7cc397646d35d29)
       Octokit

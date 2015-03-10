@@ -1,4 +1,4 @@
-NUnit
 NUnit.Runners
 dotnetrdf
 unquote
+xunit

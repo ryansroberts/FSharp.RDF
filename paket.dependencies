@@ -2,12 +2,13 @@ source https://nuget.org/api/v2
 
 nuget FSharp.Formatting
 nuget FSharpX.Core
-nuget NUnit
 nuget NUnit.Runners
 nuget Nuget.CommandLine
 nuget FAKE
 nuget SourceLink.Fake
 nuget dotnetrdf
 nuget unquote
+nuget xunit
+nuget xunit.runners
 
 github fsharp/FAKE modules/Octokit/Octokit.fsx

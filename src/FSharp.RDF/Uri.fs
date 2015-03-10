@@ -6,7 +6,7 @@ open VDS.RDF.Parsing
 
 let (++) a b = System.IO.Path.Combine(a, b)
 
-[<CustomEquality;NoComparison>]
+[<CustomEquality; NoComparison>]
 type Uri =
   | Curie of qname : string * segments : string list * ref : string option
   | Sys of System.Uri
@@ -21,21 +21,21 @@ type Uri =
 
   override u.Equals(u') =
     match u' with
-      | :? Uri as u' ->
-        match u, u' with
-        | Sys u, Sys u' -> (string u) = (string u')
-        | VDS u, VDS u' -> u = u'
-        | Sys u, VDS u' -> (string u) = (string u'.Uri)
-        | VDS u, Sys u' -> (string u.Uri) = (string u')
-        | Curie _, Curie _ -> (string u) = (string u')
-        | _ -> false
+    | :? Uri as u' ->
+      match u, u' with
+      | Sys u, Sys u' -> (string u) = (string u')
+      | VDS u, VDS u' -> u = u'
+      | Sys u, VDS u' -> (string u) = (string u'.Uri)
+      | VDS u, Sys u' -> (string u.Uri) = (string u')
+      | Curie _, Curie _ -> (string u) = (string u')
       | _ -> false
+    | _ -> false
 
   static member from s = Uri.Sys(System.Uri(s))
   static member from s = Uri.Sys s
   static member toSys (x : Uri) = System.Uri(string x)
 
-[<CustomEquality;NoComparison>]
+[<CustomEquality; NoComparison>]
 type Node =
   | Uri of Uri
   | Blank of IBlankNode
@@ -51,12 +51,12 @@ type Node =
   static member from c = Node.Uri(Uri.Curie c)
   static member from (u : string) = Node.Uri(Uri.from u)
   static member from (u : System.Uri) = Node.Uri(Uri.from u)
-  override n.Equals (n') =
+  override n.Equals(n') =
     match n' with
     | :? Node as n' ->
-        match n, n' with
-        | Uri n, Uri n' -> n = n'
-        | _ -> false
+      match n, n' with
+      | Uri n, Uri n' -> n = n'
+      | _ -> false
     | _ -> false
 
 type Subject =
@@ -77,4 +77,5 @@ type Object =
 
 type Triple = Subject * Predicate * Object
 
-type Statements = Subject * (Predicate * Object) list
+type Statements =
+  | S of Subject * (Predicate * Object) list

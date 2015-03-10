@@ -123,11 +123,10 @@ Target "Build" (fun _ ->
 
 Target "RunTests" (fun _ ->
     !! testAssemblies
-    |> NUnit (fun p ->
+    |> xUnit (fun p ->
         { p with
-            DisableShadowCopy = true
             TimeOut = TimeSpan.FromMinutes 20.
-            OutputFile = "TestResults.xml" })
+            })
 )
 
 #if MONO
@@ -303,6 +302,7 @@ Target "BuildPackage" (fun _ ->
 // Run all targets by default. Invoke 'build <Target>' to override
 
 Target "All" DoNothing
+
 
 "Clean"
   ==> "AssemblyInfo"

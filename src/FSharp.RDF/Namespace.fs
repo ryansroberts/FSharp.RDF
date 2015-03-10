@@ -9,7 +9,7 @@ let cnt = "http://www.w3.org/2011/content#"
 let compilation = "http://nice.org.uk/ns/compilation#"
 let git2prov = "http://nice.org.uk/ns/prov/"
 
-let add (g : IGraph, baseUri) =
+let add (g : IGraph, baseUri) = 
   g.BaseUri <- UriFactory.Create baseUri
   [ ("prov", prov)
     ("rdf", rdf)
@@ -18,5 +18,5 @@ let add (g : IGraph, baseUri) =
     ("base", baseUri)
     ("compilation", compilation)
     ("cnt", cnt) ]
-  |> List.iter
+  |> List.iter 
        (fun (p, ns) -> g.NamespaceMap.AddNamespace(p, UriFactory.Create ns))

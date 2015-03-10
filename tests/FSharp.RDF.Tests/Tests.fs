@@ -1,44 +1,9 @@
 module FSharp.RDF.Tests
 
-open NUnit.Framework
+open Xunit
 open Graph
 open System.IO
 open Swensen.Unquote
-
-(*Fucking about*)
-
-(* open System
-type SomeRec =
-  {
-    SomeOptionalProp : string
-    SomeProp : string
-    SomeMutipleProp : string list
-    }
-
-let sx = (Subject.from (System.Uri "http://ns/res1"),[
-(Predicate.from (System.Uri "http://ns/pr1"),Object.from (System.Uri "http://ns/bob"))
-(Predicate.from (System.Uri "http://ns/pr2"),Object.from (System.Uri "http://ns/jim"))
-(Predicate.from (System.Uri "http://ns/pr2"),Object.from (System.Uri "http://ns/john"))
-])
-
-
-let tx = (Subject.from (System.Uri "http://subject"),Predicate.from (System.Uri "http://predicate"),Object.from (System.Uri "http://object"))
-
-let objectUri = [tx] <--*> string
-
-let pr1 = Predicate.from (System.Uri "http://ns/pr1" )
-let pr2 = Predicate.from (System.Uri "http://ns/pr1" )
-let pr3 = Predicate.from (System.Uri "http://ns/pr3" )
-let tMany = [sx] ==> pr1
-
-let tFunctional = [sx] ==> pr1 ==> pr2
-
-let mPr1 = [sx] ==> pr1
-                ==> pr2
-                .> pr3
-                <--*> string
-
-                *)
 
 let functionalProperties = """
 @prefix : <http://testing.stuff/ns#> .
@@ -88,28 +53,42 @@ let pr3 = Predicate.from "http://testing.stuff/ns#pr3"
 open Store
 open Walk
 
-[<Test>]
+[<Fact>]
 let ``Extract from data property of resource``() =
   let g = Graph.from functionalProperties
   let root = fromSubject item3 g
   let item1P = walk {
     for s in root do
-    o pr3 Literal.mapString
+    mapO pr3 xsd.string
     }
-  let rx = parsers.run item1P []
+  let rx = walker.run item1P []
 
-  test <@ Some [Some "avalue"] = rx @>
+  test <@ rx = None @>
 
-[<Test>]
+[<Fact>]
 let ``Traverse object property that is not asserted``() =
   let g = Graph.from functionalProperties
   let root = fromSubject item3 g
   let item1P = walk {
     for s in root do
     traverse pr1
+    mapO pr3 xsd.string
     }
-  let rx = parsers.run item1P []
+  let rx = walker.run item1P []
 
-  test <@ [] = rx @>
+  test <@ None = rx @>
 
+[<Fact>]
+let ``One or more combinator succeeds on match`` () =
+  let g = Graph.from functionalProperties
+  let root = fromSubject item3 g
+  let item1P = walk {
+    for s in root do
+    traverse pr1
+    mapO pr3 xsd.string
+    }
 
+  let oneOrMoreItem1P = Combinators.oneOrMore item1P
+  let rx = walker.run oneOrMoreItem1P []
+
+  test <@ rx = None @>
