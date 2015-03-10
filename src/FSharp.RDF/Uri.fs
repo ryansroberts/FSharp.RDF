@@ -77,5 +77,5 @@ type Object =
 
 type Triple = Subject * Predicate * Object
 
-type Statements =
-  | S of Subject * (Predicate * Object) list
+type Resource =
+  | R of Subject * (Predicate * Object) list

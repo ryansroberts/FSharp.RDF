@@ -33,7 +33,7 @@ module private GetTriples =
     |> Seq.groupBy (fun t -> t.Subject)
     |> Seq.map
          (fun (s, tx) ->
-         S ((Subject(Node.from s)),
+         R ((Subject(Node.from s)),
          [ for t in tx ->
              (Predicate(Node.from t.Predicate), Object(Node.from t.Object)) ]))
 
@@ -60,21 +60,20 @@ let asTriples x =
     [ for (p, o) in px -> (s, p, o) ]
 
 type Walker<'a> =
-  | W of (Statements seq -> ('a * Statements seq) seq)
+  | W of (Resource seq -> ('a * Resource seq) seq)
 
 module walker =
-  //Statements matching condition c
-  let pred c (S (s,px)) = S (s, px |> List.filter c)
+  //Resource matching condition c
+  let pred c (R (s,px)) = R (s, px |> List.filter c)
 
-  //Statements for predicate p
-  let forPredicate p = pred ((function | (p', _) ->
-                              p = p'))
+  //Resource for predicate p
+  let forPredicate p = pred (fun (p',_) -> p = p')
 
   //Applies f to the subject component of statements
-  let mapSubject f (S (s,_)) = [f s]
+  let mapSubject f (R (s,_)) = [f s]
 
   //Applies f to the predicate component of statements
-  let mapPredicate f (S (s,px)) =
+  let mapPredicate f (R (s,px)) =
     seq {for p in px do
          match p with
          | (Predicate p, _) -> yield f p }
@@ -83,8 +82,7 @@ module walker =
   let mapPredicates f = Seq.map ( mapPredicate f)
 
   //Applies f to the object component of statements
-  let mapObject f (S (s,px)) =
-    printfn "mapObject %A" px
+  let mapObject f (R (s,px)) =
     seq {for p in px do
          match p with
          | (_, Object o) -> yield f o }
@@ -92,11 +90,10 @@ module walker =
   //Applies f to the object component of all resources
   let mapObjects f = Seq.collect (mapObject f)
 
-  //Traverses object properties with predicate pr
+  //Traverses object properties for predicate pr
   let mapNext pr sx =
-    let (S (s,px)) = (forPredicate pr) sx
-    seq {printfn "------Traversing %A" s
-         for p in px do
+    let (R (s,px)) = (forPredicate pr) sx
+    seq {for p in px do
             match p with
             | (_, Object(Node.Uri(Uri.VDS vds))) ->
                 yield! bySubject (Uri.VDS vds) (vds.Graph) |> triplesToStatement
