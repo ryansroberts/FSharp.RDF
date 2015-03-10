@@ -38,9 +38,12 @@ let pr3 = Predicate.from "http://testing.stuff/ns#pr3"
 
 open Combinators
 
-let typeValue = 
-  walk { 
+let typeValue =
+  walk {
     for s in (fromSubject item1 g) do
-      wherePredicate pr1
-      o Literal.mapString
-  }
+    mapO pr3 xsd.string
+    }
+
+let px = walker.run typeValue []
+let (Some p) = px
+p |> List.ofSeq

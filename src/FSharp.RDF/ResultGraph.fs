@@ -36,7 +36,6 @@ module private GetTriples =
          S ((Subject(Node.from s)),
          [ for t in tx ->
              (Predicate(Node.from t.Predicate), Object(Node.from t.Object)) ]))
-    |> List.ofSeq
 
   let fromSingle (f : Uri -> IGraph -> Triple seq) x g =
     match g with
@@ -68,7 +67,9 @@ module walker =
   let pred c (S (s,px)) = S (s, px |> List.filter c)
 
   //Statements for predicate p
-  let forPredicate p = pred ((function | (p', _) -> p = p'))
+  let forPredicate p = pred ((function | (p', _) ->
+                              printfn "mapPredicate %A %A" p p'
+                              p = p'))
 
   //Applies f to the subject component of statements
   let mapSubject f (S (s,_)) = [f s]
@@ -84,6 +85,7 @@ module walker =
 
   //Applies f to the object component of statements
   let mapObject f (S (s,px)) =
+    printfn "mapObject %A" px
     seq {for p in px do
          match p with
          | (_, Object o) -> yield f o }
@@ -118,17 +120,17 @@ module walker =
 
   //Produce a walker for statements where predicate is p
   let predicate p (W w) = W(fun sx -> w (sx |> Seq.map (forPredicate p)))
-  //Produce a parser where producing f applied to object component of statements
+  //Produce a walker where producing f applied to object component of statements
   let mapO pr f (W w) =
     W(fun sx ->
-      let sx' = sx |> Seq.map (forPredicate pr)
-      seq {for (v, s) in w sx' -> (mapObjects f s, sx)})
+      seq {for (v, s) in w sx do
+           let s' = Seq.map (forPredicate pr) s
+           yield (mapObjects f s',sx)})
 
   let traverse pr (W w) = W(fun sx -> w (mapAllNext sx))
 
   let run (W w) =
-    List.ofSeq
-    >> w
+    w
     >> Seq.map fst
     >> Seq.tryPick Some
 
@@ -180,8 +182,3 @@ module Combinators =
       yield! oneOrMore p
       yield []
     }
-
-  let andThen p p' = walk { let! p = p
-                            let! p' = p'
-                            yield (p, p') }
-  let (<*>) p p' = p andThen p'
