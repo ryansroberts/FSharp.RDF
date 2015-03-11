@@ -74,7 +74,7 @@ let ``Traverse object property that is not asserted``() =
     }
   let rx = walker.run item1P root
 
-  test <@ rx = Seq.empty @>
+  test <@ rx = [] @>
 
 [<Fact>]
 let ``One or more combinator succeeds on match`` () =

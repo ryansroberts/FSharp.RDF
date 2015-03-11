@@ -22,6 +22,7 @@ let functionalProperties = """
 :item1 rdf:type :type1.
 :item1 :pr1 :item2 .
 :item1 :value "1"^^xsd:string .
+:item1 :value "2"^^xsd:string .
 :item1 :pr4 "2"^^xsd:string .
 
 :item2 rdf:type :type2 .
@@ -40,18 +41,10 @@ let pr4 = Predicate.from "http://testing.stuff/ns#pr4"
 
 open Combinators
 
-let next p = walk {
-  traverse p
-  }
-
 let typeValue3 =
-  walk {
+  walky {
     traverse pr1
-    mapO value xsd.string
-    traverse pr2
     mapO value xsd.string
     }
 
 let px = walker.run (typeValue3) (fromSubject item1 g)
-px |> List.ofSeq |> List.map (List.ofSeq)
-
