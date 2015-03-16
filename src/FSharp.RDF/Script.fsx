@@ -2,9 +2,9 @@
 #r "../../packages/VDS.Common/lib/net40-client/VDS.Common.dll"
 #r "../../packages/FSharpx.Core/lib/40/FSharpx.Core.dll"
 #r "../../packages/Unquote/lib/net40/Unquote.dll"
-
 #load "Graph.fs"
 #load "Store.fs"
+
 open Graph
 open System.IO
 open Swensen.Unquote
@@ -38,39 +38,39 @@ open resource
 
 let g = Graph.from functionalProperties
 
-let ``Pattern match subject`` =
+let ``Pattern match subject`` = 
   test <@ [ true ] = [ for r in (resource.fromSubject item1 g) do
                          match r with
                          | Is item1 -> yield true ] @>
 
-let ``Fail to pattern match subject`` =
+let ``Fail to pattern match subject`` = 
   test <@ [ false ] = [ for r in (resource.fromSubject item1 g) do
                           match r with
                           | Is item3 -> yield true
                           | _ -> yield false ] @>
 
-let ``Pattern match type`` =
+let ``Pattern match type`` = 
   test <@ [ true ] = [ for r in (resource.fromSubject item1 g) do
                          match r with
                          | HasType type1 _ -> yield true
                          | _ -> yield false ] @>
 
-let ``Fail to pattern match type`` =
-  test <@ [ ] = [ for r in (resource.fromSubject item1 g) do
-                          match r with
-                          | HasType type2 t -> yield t
-                          | _ -> yield [] ] @>
+let ``Fail to pattern match type`` = 
+  test <@ [] = [ for r in (resource.fromSubject item1 g) do
+                   match r with
+                   | HasType type2 t -> yield t
+                   | _ -> yield [] ] @>
 
-let ``Map object`` =
+let ``Map object`` = 
   test <@ [] = [ for r in (resource.fromSubject item3 g) do
                    match r with
-                   | Predicate pr3 values ->
+                   | Predicate pr3 values -> 
                      yield resource.mapO (xsd.string) values
                    | _ -> yield [] ] @>
 
-let Traverse() =
+let Traverse() = 
   test <@ [ [ "avalue" ] ] = [ for r in (resource.fromSubject item3 g) do
                                  match r with
-                                 | Predicate pr3 values ->
+                                 | Predicate pr3 values -> 
                                    yield resource.mapO (xsd.string) values
                                  | _ -> yield [] ] @>

@@ -1,15 +1,19 @@
-module ResultSet
+namespace FSharp.RDF
 
-open VDS.RDF
-open VDS.RDF.Query
-open Graph
-open Store
+module ResultSet =
+  open VDS.RDF
+  open VDS.RDF.Query
+  open Graph
+  open Store
 
-let singles = function 
-  | ResultSet rx -> rx |> Seq.map (fun r -> Node.from r.[0])
-let doubles = function 
-  | ResultSet rx -> rx |> Seq.map (fun r -> (Node.from r.[0], Node.from r.[1]))
-let triples = 
-  function 
-  | ResultSet rx -> 
-    rx |> Seq.map (fun r -> (Node.from r.[0], Node.from r.[1], Node.from r.[2]))
+  let singles = function
+    | ResultSet rx -> rx |> Seq.map (fun r -> Node.from r.[0])
+  let doubles =
+    function
+    | ResultSet rx ->
+      rx |> Seq.map (fun r -> (Node.from r.[0], Node.from r.[1]))
+  let triples =
+    function
+    | ResultSet rx ->
+      rx
+      |> Seq.map (fun r -> (Node.from r.[0], Node.from r.[1], Node.from r.[2]))

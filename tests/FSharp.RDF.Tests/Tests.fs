@@ -1,5 +1,6 @@
 module FSharp.RDF.Tests
 
+open FSharp.RDF
 open Xunit
 open Graph
 open System.IO
@@ -63,15 +64,16 @@ let ``Fail to pattern match type``() =
 
 [<Fact>]
 let ``Map object``() =
-  test <@ [["avalue"]] = [ for r in (fromSubject item3 g) do
-                             match r with
-                             | Predicate pr3 values ->
-                                yield resource.mapO (xsd.string) values
-                             | _ -> yield [] ] @>
+  test <@ [ [ "avalue" ] ] = [ for r in (fromSubject item3 g) do
+                                 match r with
+                                 | Predicate pr3 values ->
+                                   yield resource.mapO (xsd.string) values
+                                 | _ -> yield [] ] @>
+
 [<Fact>]
 let Traverse =
-  test <@ [true] = [ for r in (fromSubject item1 g) do
+  test <@ [ true ] = [ for r in (fromSubject item1 g) do
                          match r with
                          | Predicate pr1 next ->
                            for r' in traverse next do
-                           yield true] @>
+                             yield true ] @>
