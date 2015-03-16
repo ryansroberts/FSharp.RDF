@@ -2,44 +2,75 @@
 #r "../../packages/VDS.Common/lib/net40-client/VDS.Common.dll"
 #r "../../packages/FSharpx.Core/lib/40/FSharpx.Core.dll"
 #r "../../packages/Unquote/lib/net40/Unquote.dll"
+
 #load "Graph.fs"
 #load "Store.fs"
+open Graph
+open System.IO
+open Swensen.Unquote
+
+let functionalProperties = """
+@prefix : <http://testing.stuff/ns#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/xmlschema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@base <http://testing.stuff/ns> .
+
+:item1 rdf:type :type1;
+       :pr1 :item2 .
+
+:item2 rdf:type :type2;
+       :pr2 :item3 .
+
+:item3 rdf:type :type3;
+       :pr3 "avalue"^^xsd:string .
+"""
+let item1 = Uri.from "http://testing.stuff/ns#item1"
+let type1 = Uri.from "http://testing.stuff/ns#type1"
+let type2 = Uri.from "http://testing.stuff/ns#type2"
+let item3 = Uri.from "http://testing.stuff/ns#item3"
+let pr1 = Uri.from "http://testing.stuff/ns#pr1"
+let pr2 = Uri.from "http://testing.stuff/ns#pr2"
+let pr3 = Uri.from "http://testing.stuff/ns#pr3"
 
 open Store
-open Swensen.Unquote
-open Graph
-
-let compilerG = """
-@prefix : <http://nice.org.uk/ns/compilation#> .
-@prefix owl: <http://www.w3.org/2002/07/owl#> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix xml: <http://www.w3.org/XML/1998/namespace> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@base <http://nice.org.uk/ns/compilation/> .
-
-:QualityStandards rdf:type :DirectoryPattern ,
-                           owl:NamedIndividual ;
-                  :expression "qualitystandards"^^xsd:string ;
-                  :parent :Root .
-
-:QualityStatement rdf:type :FilePattern ,
-                           owl:NamedIndividual ;
-                  :expression "statement-(?<QualityStatementId>\\s+)"^^xsd:string ;
-                  :tool :Content ;
-                  :parent :QualityStandard .
-
-:QualityStandard  rdf:type :DirectoryPattern ,
-                 owl:NamedIndividual ;
-                 :expression "(?<QualityStandardId>\\s+)"^^xsd:string .
-"""
-let g = Graph.from compilerG
-let root = Uri.from "http://nice.org.uk/ns/compilation#Root"
-let directoryPattern = 
-  Uri.from "http://nice.org.uk/ns/compilation#DirectoryPattern"
-let expression = Uri.from "http://nice.org.uk/ns/compilation#expression"
-let parent = Uri.from "http://nice.org.uk/ns/compilation#parent"
-
 open resource
 
-let roots = fromObject root
+let g = Graph.from functionalProperties
+
+let ``Pattern match subject`` =
+  test <@ [ true ] = [ for r in (resource.fromSubject item1 g) do
+                         match r with
+                         | Is item1 -> yield true ] @>
+
+let ``Fail to pattern match subject`` =
+  test <@ [ false ] = [ for r in (resource.fromSubject item1 g) do
+                          match r with
+                          | Is item3 -> yield true
+                          | _ -> yield false ] @>
+
+let ``Pattern match type`` =
+  test <@ [ true ] = [ for r in (resource.fromSubject item1 g) do
+                         match r with
+                         | HasType type1 _ -> yield true
+                         | _ -> yield false ] @>
+
+let ``Fail to pattern match type`` =
+  test <@ [ ] = [ for r in (resource.fromSubject item1 g) do
+                          match r with
+                          | HasType type2 t -> yield t
+                          | _ -> yield [] ] @>
+
+let ``Map object`` =
+  test <@ [] = [ for r in (resource.fromSubject item3 g) do
+                   match r with
+                   | Predicate pr3 values ->
+                     yield resource.mapO (xsd.string) values
+                   | _ -> yield [] ] @>
+
+let Traverse() =
+  test <@ [ [ "avalue" ] ] = [ for r in (resource.fromSubject item3 g) do
+                                 match r with
+                                 | Predicate pr3 values ->
+                                   yield resource.mapO (xsd.string) values
+                                 | _ -> yield [] ] @>
