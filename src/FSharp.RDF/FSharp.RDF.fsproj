@@ -44,11 +44,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Uri.fs" />
+    <Compile Include="Graph.fs" />
     <Compile Include="Assertion.fs" />
-    <Compile Include="Namespace.fs" />
     <Compile Include="Store.fs" />
-    <Compile Include="ResultGraph.fs" />
     <Compile Include="ResultSet.fs" />
     <None Include="Script.fsx" />
   </ItemGroup>

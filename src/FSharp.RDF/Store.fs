@@ -7,7 +7,6 @@ open VDS.RDF.Storage
 open VDS.RDF.Storage.Management
 open VDS.RDF.Parsing
 open Graph
-open Namespace
 
 let private parser = SparqlQueryParser()
 
@@ -29,14 +28,14 @@ type ResultGraph =
 let private defaultUri = null :> System.Uri
 
 let loadFile (s : string) =
-  let g = new Graph()
+  let g = new VDS.RDF.Graph()
   match s.StartsWith("http") with
   | true -> g.LoadFromUri(System.Uri s)
   | _ -> g.LoadFromFile s
   Memory g
 
 let loadTtl (sr : System.IO.StreamReader) =
-  let g = new Graph()
+  let g = new VDS.RDF.Graph()
   let p = new TurtleParser()
   p.Load(g, sr)
   Memory g
@@ -64,10 +63,6 @@ let resultset (store : Store) q =
   match q with
   | Query q -> q.ExecuteQuery() |> ResultSet
 
-let defaultNamespaces s bas =
-  match s with
-  | Memory g -> Namespace.add (g, bas)
-
 let dump s =
   match s with
   | Memory g ->
@@ -80,3 +75,22 @@ let dump s =
 let diff g g' =
   match g, g' with
   | Memory g, Memory g' -> g.Difference g'
+
+
+open prefixes
+let addPrefixes (g : IGraph, baseUri) =
+  g.BaseUri <- UriFactory.Create baseUri
+  [ ("prov", prov)
+    ("rdf", rdf)
+    ("owl", owl)
+    ("git2prov", git2prov)
+    ("base", baseUri)
+    ("compilation", compilation)
+    ("cnt", cnt) ]
+  |> List.iter
+       (fun (p, ns) -> g.NamespaceMap.AddNamespace(p, UriFactory.Create ns))
+
+let defaultNamespaces s bas =
+  match s with
+  | Memory g -> addPrefixes (g, bas)
+
