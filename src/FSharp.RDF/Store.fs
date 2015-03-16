@@ -10,44 +10,44 @@ open Graph
 
 let private parser = SparqlQueryParser()
 
-type Store =
+type Store = 
   | Memory of IGraph
-  member x.QueryProcessor() =
+  member x.QueryProcessor() = 
     match x with
     | Memory m -> LeviathanQueryProcessor(InMemoryDataset(m))
 
-type Query =
+type Query = 
   | Query of SparqlParameterizedString
 
-type ResultSet =
+type ResultSet = 
   | ResultSet of SparqlResultSet
 
-type ResultGraph =
+type ResultGraph = 
   | ResultGraph of IGraph
 
 let private defaultUri = null :> System.Uri
 
-let loadFile (s : string) =
+let loadFile (s : string) = 
   let g = new VDS.RDF.Graph()
   match s.StartsWith("http") with
   | true -> g.LoadFromUri(System.Uri s)
   | _ -> g.LoadFromFile s
   Memory g
 
-let loadTtl (sr : System.IO.StreamReader) =
+let loadTtl (sr : System.IO.StreamReader) = 
   let g = new VDS.RDF.Graph()
   let p = new TurtleParser()
   p.Load(g, sr)
   Memory g
 
-type Param =
+type Param = 
   | Literal of string
   | Uri of Uri
 
-let query (store : Store) (q : string) px =
+let query (store : Store) (q : string) px = 
   match store with
-  | Memory g ->
-    let qs =
+  | Memory g -> 
+    let qs = 
       new SparqlParameterizedString(CommandText = q, Namespaces = g.NamespaceMap)
     for (k, p) in px do
       match p with
@@ -59,26 +59,26 @@ let query (store : Store) (q : string) px =
 
 let graph (store : Store) q = ()
 
-let resultset (store : Store) q =
+let resultset (store : Store) q = 
   match q with
   | Query q -> q.ExecuteQuery() |> ResultSet
 
-let dump s =
+let dump s = 
   match s with
-  | Memory g ->
+  | Memory g -> 
     let s = System.Text.StringBuilder()
     let w = new VDS.RDF.Writing.CompressingTurtleWriter()
     use sw = new System.IO.StringWriter(s)
     w.Save(g, sw)
     s.ToString()
 
-let diff g g' =
+let diff g g' = 
   match g, g' with
   | Memory g, Memory g' -> g.Difference g'
 
-
 open prefixes
-let addPrefixes (g : IGraph, baseUri) =
+
+let addPrefixes (g : IGraph, baseUri) = 
   g.BaseUri <- UriFactory.Create baseUri
   [ ("prov", prov)
     ("rdf", rdf)
@@ -87,10 +87,9 @@ let addPrefixes (g : IGraph, baseUri) =
     ("base", baseUri)
     ("compilation", compilation)
     ("cnt", cnt) ]
-  |> List.iter
+  |> List.iter 
        (fun (p, ns) -> g.NamespaceMap.AddNamespace(p, UriFactory.Create ns))
 
-let defaultNamespaces s bas =
+let defaultNamespaces s bas = 
   match s with
   | Memory g -> addPrefixes (g, bas)
-

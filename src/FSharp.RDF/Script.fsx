@@ -2,7 +2,6 @@
 #r "../../packages/VDS.Common/lib/net40-client/VDS.Common.dll"
 #r "../../packages/FSharpx.Core/lib/40/FSharpx.Core.dll"
 #r "../../packages/Unquote/lib/net40/Unquote.dll"
-
 #load "Graph.fs"
 #load "Store.fs"
 
@@ -36,11 +35,11 @@ let compilerG = """
 """
 let g = Graph.from compilerG
 let root = Uri.from "http://nice.org.uk/ns/compilation#Root"
-let directoryPattern = Uri.from "http://nice.org.uk/ns/compilation#DirectoryPattern"
+let directoryPattern = 
+  Uri.from "http://nice.org.uk/ns/compilation#DirectoryPattern"
 let expression = Uri.from "http://nice.org.uk/ns/compilation#expression"
 let parent = Uri.from "http://nice.org.uk/ns/compilation#parent"
 
-
 open resource
-let roots = fromObject root
 
+let roots = fromObject root
