@@ -188,7 +188,7 @@ module resource =
 
   let (|FunctionalDataProperty|_|) p f r =
     match r with
-    | FunctionalProperty p xo -> Some(f xo)
+    | FunctionalProperty p (O o) -> Some(f o)
 
   let (|Traverse|_|) p r =
     match r with
