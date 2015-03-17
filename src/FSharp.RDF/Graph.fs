@@ -194,6 +194,10 @@ module resource =
     match r with
     | Property p xo -> traverse xo |> noneIfEmpty
 
+  let (|TraverseFunctional|_|) p r =
+    match r with
+    | Property p xo -> traverse xo |> (function | x::xs -> Some x | _ -> None)
+
   let (|HasType|_|) t (R(_, xs)) =
     xs
     |> Seq.filter
