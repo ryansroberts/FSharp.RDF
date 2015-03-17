@@ -161,17 +161,36 @@ module Graph =
 
     let (|Is|) (R(S(Uri s), _)) = s
 
-    let optionalList =
+    let noneIfEmpty =
       function
       | [] -> None
       | x :: xs -> Some(x :: xs)
 
-    let (|Predicate|_|) p (R(_, xs)) =
+    let (|Property|_|) p (R(_, xs)) =
       xs
       |> Seq.filter (fun ((P(Uri p')), _) -> p = p')
       |> Seq.map (fun (_, o) -> o)
       |> Seq.toList
-      |> optionalList
+      |> noneIfEmpty
+
+    let (|FunctionalProperty|_|) p (R(_, xs)) =
+      xs
+      |> Seq.filter (fun ((P(Uri p')), _) -> p = p')
+      |> Seq.map (fun (_, o) -> o)
+      |> Seq.toList
+      |> (function | x::xs -> Some x | _ -> None)
+
+    let (|DataProperty|_|) p f r =
+      match r with
+        | Property p xo -> Some (mapO f xo)
+
+    let (|FunctionalDataProperty|_|) p f r =
+      match r with
+        | FunctionalProperty p xo -> Some (f xo)
+
+    let (|Traverse|_|) p r =
+      match r with
+        | Property p xo -> traverse xo |> noneIfEmpty
 
     let (|HasType|_|) t (R(_, xs)) =
       xs
@@ -180,7 +199,7 @@ module Graph =
            p = Uri.from (prefixes.rdf + "type") && t = o)
       |> Seq.map (fun (_, (O(Uri t))) -> t)
       |> Seq.toList
-      |> optionalList
+      |> noneIfEmpty
 
   module xsd =
     open VDS.RDF
