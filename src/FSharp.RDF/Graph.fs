@@ -1,7 +1,7 @@
 namespace FSharp.RDF
 
 open VDS.RDF
-open VDS.RDF.Writing
+open VDS.RDF.Writin 
 open VDS.RDF.Parsing
 
 [<AutoOpen>]
@@ -151,6 +151,7 @@ module resource =
   //Applies f to the object component of all resources
   let mapO f = List.map (mapObject f)
 
+  let id (R(S(Uri u),_)) = u
   //Traverses object properties
   let traverse xo =
     [ for o in xo do
