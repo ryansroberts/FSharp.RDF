@@ -38,12 +38,15 @@ let r3 = (fromSubject item3 g) |> List.head
 
 
 [<Fact>]
-let ``Pattern match subject``() =
-  test <@ true = match r1 with | Is item1 -> true | _ -> false  @>
+let ``Pattern match id`` () =
+  <@true = match r1 with
+           | Is item1 _ -> true
+           | _ -> false@>
 
 [<Fact>]
-let ``Fail to pattern match subject``() =
-  test <@ false = match r1 with | Is item3 -> false | _ -> false @>
+let ``Fail to pattern match id`` () =
+  <@match r1 with | Is item3 _ -> true | _ -> false@>
+
 
 [<Fact>]
 let ``Pattern match type``() =

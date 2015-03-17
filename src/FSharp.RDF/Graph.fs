@@ -159,7 +159,10 @@ module resource =
           yield! bySubject (Uri.VDS vds) (vds.Graph) |> triplesToStatement
         | _ -> () ]
 
-  let (|Is|) (R(S(Uri s), _)) = s
+  let (|Is|_|) u (R(S(Uri u'), _)) =
+    match u = u' with
+      | true -> Some u
+      | _ -> None
 
   let noneIfEmpty =
     function
