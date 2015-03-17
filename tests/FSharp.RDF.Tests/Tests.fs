@@ -2,7 +2,6 @@ module FSharp.RDF.Tests
 
 open FSharp.RDF
 open Xunit
-open Graph
 open System.IO
 open Swensen.Unquote
 

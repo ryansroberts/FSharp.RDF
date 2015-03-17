@@ -3,7 +3,6 @@ namespace FSharp.RDF
 module ResultSet =
   open VDS.RDF
   open VDS.RDF.Query
-  open Graph
   open Store
 
   let singles = function

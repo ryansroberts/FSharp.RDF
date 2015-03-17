@@ -3,7 +3,6 @@ namespace FSharp.RDF
 module Assertion =
   open VDS.RDF
   open VDS.RDF.Writing
-  open Graph
 
   let literal (g : IGraph) s = Literal(g.CreateLiteralNode s)
   let uri (g : IGraph) u = VDS(UriFactory.Create u |> g.CreateUriNode)

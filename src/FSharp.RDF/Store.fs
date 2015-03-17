@@ -7,7 +7,6 @@ module Store =
   open VDS.RDF.Storage
   open VDS.RDF.Storage.Management
   open VDS.RDF.Parsing
-  open Graph
 
   let private parser = SparqlQueryParser()
 
