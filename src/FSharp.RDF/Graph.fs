@@ -1,7 +1,7 @@
 namespace FSharp.RDF
 
 open VDS.RDF
-open VDS.RDF.Writin 
+open VDS.RDF.Writing
 open VDS.RDF.Parsing
 
 [<AutoOpen>]
@@ -62,15 +62,15 @@ type Node =
     | _ -> false
 
 type Subject =
-  | S of Node
-  static member from c = S(Node.Uri(Uri.Curie c))
-  static member from (u : string) = S(Node.from u)
+  | S of Uri
+  static member from c = S(Uri.Curie c)
+  static member from (u : string) = S(Uri.from u)
 
 type Predicate =
-  | P of Node
-  static member from c = P(Node.Uri(Uri.Curie c))
-  static member from u = P(Node.Uri(Uri.Sys u))
-  static member from u = P(Node.Uri(Uri.Sys(System.Uri u)))
+  | P of Uri
+  static member from c = P(Uri.Curie c)
+  static member from u = P(Uri.Sys u)
+  static member from u = P(Uri.Sys(System.Uri u))
 
 type Object =
   | O of Node
@@ -105,11 +105,11 @@ module triple =
 
   let triplesToStatement (t : VDS.RDF.Triple seq) =
     t
-    |> Seq.groupBy (fun t -> t.Subject)
+    |> Seq.groupBy (fun t -> t.Subject :?> IUriNode)
     |> Seq.map
          (fun (s, tx) ->
-         R((S(Node.from s)),
-           [ for t in tx -> (P(Node.from t.Predicate), O(Node.from t.Object)) ]))
+         R((S(VDS s)),
+           [ for t in tx -> (P(VDS ( t.Predicate :?> IUriNode )), O(Node.from t.Object)) ]))
     |> Seq.toList
 
   let fromSingle (f : Uri -> IGraph -> VDS.RDF.Triple seq) x (Graph g) =
@@ -146,13 +146,12 @@ module resource =
       for (p, o) in px -> (s, p, o)
     }
 
-  //Applies f to the object component of statement
   let mapObject f (O o) = f o
-  //Applies f to the object component of all resources
+
   let mapO f = List.map (mapObject f)
 
-  let id (R(S(Uri u),_)) = u
-  //Traverses object properties
+  let id (R(S s,_)) = s
+
   let traverse xo =
     [ for o in xo do
         match o with
@@ -160,8 +159,8 @@ module resource =
           yield! bySubject (Uri.VDS vds) (vds.Graph) |> triplesToStatement
         | _ -> () ]
 
-  let (|Is|_|) u (R(S(Uri u'), _)) =
-    match u = u' with
+  let (|Is|_|) u (R(S s, _)) =
+    match u = s with
       | true -> Some u
       | _ -> None
 
@@ -172,14 +171,14 @@ module resource =
 
   let (|Property|_|) p (R(_, xs)) =
     xs
-    |> Seq.filter (fun ((P(Uri p')), _) -> p = p')
+    |> Seq.filter (fun ((P p'), _) -> p = p')
     |> Seq.map (fun (_, o) -> o)
     |> Seq.toList
     |> noneIfEmpty
 
   let (|FunctionalProperty|_|) p (R(_, xs)) =
     xs
-    |> Seq.filter (fun ((P(Uri p')), _) -> p = p')
+    |> Seq.filter (fun ((P p'), _) -> p = p')
     |> Seq.map (fun (_, o) -> o)
     |> Seq.toList
     |> (function
@@ -205,7 +204,7 @@ module resource =
   let (|HasType|_|) t (R(_, xs)) =
     xs
     |> Seq.filter
-         (fun ((P(Uri p)), (O(Uri o))) ->
+         (fun ((P p), (O(Uri o))) ->
          p = Uri.from (prefixes.rdf + "type") && t = o)
     |> Seq.map (fun (_, (O(Uri t))) -> t)
     |> Seq.toList
