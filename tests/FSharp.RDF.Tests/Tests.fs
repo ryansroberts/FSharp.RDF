@@ -56,10 +56,9 @@ let ``Fail to pattern match type``() =
 
 [<Fact>]
 let ``Map object``() =
-  test <@  ["avalue" ] = match r1 with
+  test <@  ["avalue" ] = match r3 with
                          | DataProperty pr3 xsd.string values -> values
                          | _ -> [] @>
-
 [<Fact>]
 let Traverse =
   test <@ [ true ] = [ for r in (fromSubject item1 g) do
