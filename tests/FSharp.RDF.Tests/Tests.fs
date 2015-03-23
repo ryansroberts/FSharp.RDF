@@ -20,14 +20,22 @@ let functionalProperties = """
 
 :item3 rdf:type :type3;
        :pr3 "avalue"^^xsd:string .
+
+:item4 rdf:type :type4;
+       :pr4 [
+         rdf:type :type5;
+         :pr3 "blankvalue"^^xsd:string .
+        ] .
 """
 let item1 = Uri.from "http://testing.stuff/ns#item1"
 let type1 = Uri.from "http://testing.stuff/ns#type1"
 let type2 = Uri.from "http://testing.stuff/ns#type2"
 let item3 = Uri.from "http://testing.stuff/ns#item3"
+let item4 = Uri.from "http://testing.stuff/ns#item4"
 let pr1 = Uri.from "http://testing.stuff/ns#pr1"
 let pr2 = Uri.from "http://testing.stuff/ns#pr2"
 let pr3 = Uri.from "http://testing.stuff/ns#pr3"
+let pr4 = Uri.from "http://testing.stuff/ns#pr4"
 
 open Store
 open resource
@@ -62,9 +70,27 @@ let ``Map object``() =
                          | DataProperty pr3 xsd.string values -> values
                          | _ -> [] @>
 [<Fact>]
-let Traverse =
+let ``Traverse an object property``() =
   test <@ [ true ] = [ for r in (fromSubject item1 g) do
                          match r with
                          | Property pr1 next ->
                            for r' in traverse next do
                              yield true ] @>
+[<Fact>]
+let ``Traverse a blank node``()  =
+  test <@ [ true ] = [ for r in (fromSubject item4 g) do
+                         match r with
+                         | Property pr4 next ->
+                           for r' in traverse next do
+                             yield true ] @>
+
+open Assertion
+
+[<Fact>]
+let ``Assert a resource``() =
+  resource (uri "base:id") [
+    a !"base:type"
+    dataProperty !"base:someDataProperty" ^^^xsd.string
+  ]
+  >>> Output.toGraph "http://sometest/ns#"
+
