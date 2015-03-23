@@ -5,6 +5,7 @@
 #load "Graph.fs"
 #load "Store.fs"
 #load "Assertion.fs"
+
 open FSharp.RDF
 open System.IO
 open Swensen.Unquote
@@ -48,59 +49,65 @@ let g = Graph.from functionalProperties
 let r1 = (fromSubject item1 g) |> List.head
 let r3 = (fromSubject item3 g) |> List.head
 
+let ``Pattern match id`` = 
+  test <@ true = match r1 with
+                 | Is item1 _ -> true
+                 | _ -> false @>
 
-let ``Pattern match id``  =
-  test <@true = match r1 with
-           | Is item1 _ -> true
-           | _ -> false@>
+let ``Fail to pattern match id`` = 
+  test <@ match r1 with
+          | Is item3 _ -> true
+          | _ -> false @>
 
-let ``Fail to pattern match id``  =
-  test <@match r1 with | Is item3 _ -> true | _ -> false@>
+let ``Pattern match type`` = 
+  test <@ true = match r1 with
+                 | HasType type1 _ -> true
+                 | _ -> false @>
 
+let ``Fail to pattern match type`` = 
+  test <@ false = match r1 with
+                  | HasType type2 _ -> true
+                  | _ -> false @>
 
-let ``Pattern match type`` =
-  test <@ true = match r1 with | HasType type1 _ -> true | _ -> false  @>
-
-let ``Fail to pattern match type`` =
-  test <@ false = match r1 with | HasType type2 _ -> true | _ -> false  @>
-
-let ``Map object`` =
-  test <@  ["avalue" ] = match r3 with
+let ``Map object`` = 
+  test <@ [ "avalue" ] = match r3 with
                          | DataProperty pr3 xsd.string values -> values
                          | _ -> [] @>
-let ``Traverse an object property`` =
+
+let ``Traverse an object property`` = 
   test <@ [ true ] = [ for r in (fromSubject item1 g) do
                          match r with
-                         | Property pr1 next ->
+                         | Property pr1 next -> 
                            for r' in traverse next do
                              yield true ] @>
-let ``Traverse a blank node``  =
+
+let ``Traverse a blank node`` = 
   test <@ [ true ] = [ for r in (fromSubject item4 g) do
                          match r with
-                         | Property pr4 next ->
+                         | Property pr4 next -> 
                            for r' in traverse next do
                              yield true ] @>
 
-
 open Assertion
+
 let s = ""
 let sb = new System.Text.StringBuilder(s)
-let bob = resource !"base:id" [
-           a !"base:Type"
-           objectProperty !"base:someObjectProperty" !"base:SomeOtherId"
-           dataProperty !"base:someDataProperty" ("value" ^^^ xsd.string)
 
-           blank !"base:someBlankProperty"
-                [ a !"base:BankType"
-                  dataProperty !"base:someDataProperty" ("value2" ^^^ xsd.string) ]
+let bob = 
+  resource !"base:id" 
+    [ a !"base:Type"
+      objectProperty !"base:someObjectProperty" !"base:SomeOtherId"
+      dataProperty !"base:someDataProperty" ("value" ^^^ xsd.string)
+      
+      blank !"base:someBlankProperty" 
+        [ a !"base:BankType"
+          dataProperty !"base:someDataProperty" ("value2" ^^^ xsd.string) ]
+      
+      one !"base:someOtherObjectProperty" !"base:id2" 
+        [ a !"base:LinkedType"
+          dataProperty !"base:someDataProperty" ("value3" ^^^ xsd.string) ] ]
 
-           one !"base:someOtherObjectProperty" !"base:id2"
-                [ a !"base:LinkedType"
-                  dataProperty !"base:someDataProperty" ("value3" ^^^ xsd.string) ]
-         ]
-
-[bob]
+[ bob ]
 |> output.toGraph "http://sometest/ns#"
 |> output.formatTTL (output.toString sb)
-
 string sb

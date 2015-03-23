@@ -38,16 +38,18 @@ type Node =
     | :? ILiteralNode as n ->
       (match n with
        | :? StringNode as s -> s.AsString() |> Literal.String
-       | :? DateTimeNode as d -> d.AsDateTimeOffset () |> Literal.DateTimeOffset
-       | _ -> n.Value  |> Literal.String)
-       |> Node.Literal
+       | :? DateTimeNode as d -> d.AsDateTimeOffset() |> Literal.DateTimeOffset
+       | _ -> n.Value |> Literal.String)
+      |> Node.Literal
     | :? IBlankNode as n ->
-      Node.Blank( Blank.Blank (
-        lazy
-            n.Graph.GetTriplesWithSubject(n)
-            |> Seq.map (function t -> (P (Uri.from (t.Predicate :?> IUriNode).Uri),Object.from t.Object))
-            |> Seq.toList
-      ))
+      let traverseBlank() =
+        n.Graph.GetTriplesWithSubject(n)
+        |> Seq.map
+             (function
+             | t ->
+               (P(Uri.from (t.Predicate :?> IUriNode).Uri), Object.from t.Object))
+        |> Seq.toList
+      Node.Blank(Blank.Blank(lazy traverseBlank()))
     | _ -> failwith (sprintf "Unknown node %A" (n.GetType()))
 
   static member from (u : string) = Node.Uri(Uri.from u)
@@ -81,7 +83,7 @@ and Object =
     match n with
     | Node.Blank(Blank.Blank(xs)) ->
       O(n, lazy [ R(Subject.from "http://anon", xs.Value) ]) //System.Uri will choke if the scheme is blank, so hack
-    | Node.Uri (Sys uri) ->
+    | Node.Uri(Sys uri) ->
       O(n,
         lazy let uri = u.Graph.CreateUriNode(uri)
              u.Graph.GetTriplesWithSubject uri |> Resource.from)
