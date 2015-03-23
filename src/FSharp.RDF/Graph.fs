@@ -39,7 +39,7 @@ type Node =
       (match n with
        | :? StringNode as s -> s.AsString() |> Literal.String
        | :? DateTimeNode as d -> d.AsDateTimeOffset () |> Literal.DateTimeOffset
-       | _ -> (string) n  |> Literal.String)
+       | _ -> n.Value  |> Literal.String)
        |> Node.Literal
     | :? IBlankNode as n ->
       Node.Blank( Blank.Blank (
