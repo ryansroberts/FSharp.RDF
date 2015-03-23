@@ -24,7 +24,7 @@ let functionalProperties = """
 :item4 rdf:type :type4;
        :pr4 [
          rdf:type :type5;
-         :pr3 "blankvalue"^^xsd:string .
+         :pr3 "blankvalue"^^xsd:string ;
         ] .
 """
 let item1 = Uri.from "http://testing.stuff/ns#item1"
@@ -88,9 +88,45 @@ open Assertion
 
 [<Fact>]
 let ``Assert a resource``() =
-  resource (uri "base:id") [
-    a !"base:type"
-    dataProperty !"base:someDataProperty" ^^^xsd.string
-  ]
-  >>> Output.toGraph "http://sometest/ns#"
+  let s = ""
+  let sb = new System.Text.StringBuilder(s)
+  let bob = resource !"base:id" [
+           a !"base:Type"
+           objectProperty !"base:someObjectProperty" !"base:SomeOtherId"
+           dataProperty !"base:someDataProperty" ("value" ^^^ xsd.string)
 
+           blank !"base:someBlankProperty"
+                [ a !"base:BankType"
+                  dataProperty !"base:someDataProperty" ("value2" ^^^ xsd.string) ]
+
+           one !"base:someOtherObjectProperty" !"base:id2"
+                [ a !"base:LinkedType"
+                  dataProperty !"base:someDataProperty" ("value3" ^^^ xsd.string) ]
+         ]
+
+  [bob]
+  |> output.toGraph "http://sometest/ns#"
+  |> output.formatTTL (output.toString sb)
+  |> ignore
+
+  test <@ """@base <http://sometest/ns#>.
+
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix prov: <http://www.w3.org/ns/prov#>.
+@prefix owl: <http://www.w3.org/2002/07/owl#>.
+@prefix git2prov: <http://nice.org.uk/ns/prov/>.
+@prefix base: <http://sometest/ns#>.
+@prefix compilation: <http://nice.org.uk/ns/compilation#>.
+@prefix cnt: <http://www.w3.org/2011/content#>.
+
+<base:id> <base:someBlankProperty> [<rdf:type> <base:BankType> ; 
+                                    <base:someDataProperty> "value2"^^xsd:string];
+          <base:someDataProperty> "value"^^xsd:string;
+          <base:someObjectProperty> <base:SomeOtherId>;
+          <base:someOtherObjectProperty> <base:id2>;
+          <rdf:type> <base:Type>.
+<base:id2> <base:someDataProperty> "value3"^^xsd:string;
+           <rdf:type> <base:LinkedType>.
+""" = sb.ToString() @>

@@ -7,13 +7,13 @@ open VDS.RDF.Nodes
 open FSharpx
 open System.Text.RegularExpressions
 
-
 [<CustomEquality; NoComparison>]
 type Uri =
   | Sys of System.Uri
+
   override x.ToString() =
-  match x with
-  | Sys uri -> string uri
+    match x with
+    | Sys uri -> string uri
 
   override u.Equals(u') =
     match u' with
@@ -26,7 +26,6 @@ type Uri =
   static member from s = Uri.Sys s
   static member toSys (x : Uri) = System.Uri(string x)
 
-
 [<CustomEquality; NoComparison>]
 type Node =
   | Uri of Uri
@@ -38,7 +37,7 @@ type Node =
     | :? IUriNode as n -> Node.Uri(Uri.Sys n.Uri)
     | :? ILiteralNode as n ->
       (match n with
-       | :? StringNode as s -> s.AsString () |> Literal.String
+       | :? StringNode as s -> s.AsString() |> Literal.String
        | :? DateTimeNode as d -> d.AsDateTimeOffset () |> Literal.DateTimeOffset
        | _ -> (string) n  |> Literal.String)
        |> Node.Literal
@@ -76,34 +75,34 @@ and Predicate =
 
 and Object =
   | O of Node * Lazy<Resource list>
-  static member from u = O(Node.Uri(Uri.Sys u),lazy [])
-  static member from (u:INode) =
+  static member from u = O(Node.Uri(Uri.Sys u), lazy [])
+  static member from (u : INode) =
     let n = Node.from u
     match n with
-      | Node.Blank (Blank.Blank (xs)) -> O(n, lazy [R(Subject.from "http://anon",xs.Value)]) //System.Uri will choke if the scheme is blank, so hack
-      | Node.Uri uri ->
-        O(n,lazy
-          let uri = u.Graph.CreateUriNode(string uri)
-          u.Graph.GetTriplesWithSubject uri |> Resource.from
-          )
-      | n -> O(n,lazy [])
+    | Node.Blank(Blank.Blank(xs)) ->
+      O(n, lazy [ R(Subject.from "http://anon", xs.Value) ]) //System.Uri will choke if the scheme is blank, so hack
+    | Node.Uri (Sys uri) ->
+      O(n,
+        lazy let uri = u.Graph.CreateUriNode(uri)
+             u.Graph.GetTriplesWithSubject uri |> Resource.from)
+    | n -> O(n, lazy [])
 
-and Statement = (Predicate * Object)
+and Statement = Predicate * Object
 
 and Triple = Subject * Predicate * Object
 
 and Resource =
   | R of Subject * Statement list
-  static member from (xt:VDS.RDF.Triple seq) =
+  static member from (xt : VDS.RDF.Triple seq) =
     xt
     |> Seq.groupBy (fun t -> t.Subject :?> IUriNode)
     |> Seq.map
          (fun (s, tx) ->
-         R((S(Uri.Sys s.Uri)),
-           [ for t in tx ->
-             (P(Uri.Sys ( t.Predicate :?> IUriNode ).Uri), Object.from t.Object) ]))
+         R
+           ((S(Uri.Sys s.Uri)),
+            [ for t in tx ->
+                (P(Uri.Sys (t.Predicate :?> IUriNode).Uri), Object.from t.Object) ]))
     |> Seq.toList
-
 
 and Blank =
   | Blank of Lazy<Statement list>
@@ -128,8 +127,6 @@ module triple =
     g.GetTriplesWithSubjectObject(uriNode p g, uriNode o g)
   let bySubjectPredicate p o (g : IGraph) =
     g.GetTriplesWithSubjectPredicate(uriNode p g, uriNode o g)
-
-
   let fromSingle (f : Uri -> IGraph -> VDS.RDF.Triple seq) x (Graph g) =
     f x g |> Resource.from
   let fromDouble (f : Uri -> Uri -> IGraph -> VDS.RDF.Triple seq) x y (Graph g) =
@@ -164,19 +161,18 @@ module resource =
       for (p, o) in px -> (s, p, o)
     }
 
-  let mapObject f (O (o,_)) = f o
-
+  let mapObject f (O(o, _)) = f o
   let mapO f = List.map (mapObject f)
-
-  let id (R(S s,_)) = s
+  let id (R(S s, _)) = s
 
   let traverse xo =
-    [ for (O (_,next)) in xo do yield! next.Value]
+    [ for (O(_, next)) in xo do
+        yield! next.Value ]
 
   let (|Is|_|) u (R(S s, _)) =
     match u = s with
-      | true -> Some u
-      | _ -> None
+    | true -> Some u
+    | _ -> None
 
   let noneIfEmpty =
     function
@@ -205,7 +201,7 @@ module resource =
 
   let (|FunctionalDataProperty|_|) p f r =
     match r with
-    | FunctionalProperty p (O (o,_)) -> Some(f o)
+    | FunctionalProperty p (O(o, _)) -> Some(f o)
 
   let (|Traverse|_|) p r =
     match r with
@@ -213,14 +209,17 @@ module resource =
 
   let (|TraverseFunctional|_|) p r =
     match r with
-    | Property p xo -> traverse xo |> (function | x::xs -> Some x | _ -> None)
+    | Property p xo ->
+      traverse xo |> (function
+      | x :: xs -> Some x
+      | _ -> None)
 
   let (|HasType|_|) t (R(_, xs)) =
     xs
     |> Seq.filter
-         (fun ((P p), (O(Uri o,_))) ->
+         (fun ((P p), (O(Uri o, _))) ->
          p = Uri.from (prefixes.rdf + "type") && t = o)
-    |> Seq.map (fun (_, (O(Uri o,_))) -> o)
+    |> Seq.map (fun (_, (O(Uri o, _))) -> o)
     |> Seq.toList
     |> noneIfEmpty
 
@@ -232,5 +231,12 @@ module xsd =
     | Node.Literal l -> (f l)
     | _ -> failwith (sprintf "%A is not a literal node" n)
 
-  let string = function | Node.Literal ( Literal.String s ) -> s | n -> (string) n
-  let datetimeoffset = function | Node.Literal ( Literal.DateTimeOffset d ) -> d | n -> failwith "%A is not a datetime node"
+  let string =
+    function
+    | Node.Literal(Literal.String s) -> s
+    | n -> failwith (sprintf "%A is not a string node" n)
+
+  let datetimeoffset =
+    function
+    | Node.Literal(Literal.DateTimeOffset d) -> d
+    | n -> failwith "%A is not a datetime node"

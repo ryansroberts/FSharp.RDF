@@ -42,7 +42,7 @@ module Store =
 
   type Param =
     | Literal of string
-    | Uri of Uri
+    | Uri of FSharp.RDF.Uri
 
   let query (store : Store) (q : string) px =
     match store with
@@ -77,7 +77,7 @@ module Store =
     match g, g' with
     | Memory g, Memory g' -> g.Difference g'
 
-  open prefixes
+  open FSharp.RDF.prefixes
 
   let addPrefixes (g : IGraph, baseUri) =
     g.BaseUri <- UriFactory.Create baseUri
