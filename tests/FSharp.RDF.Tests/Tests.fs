@@ -37,7 +37,6 @@ let pr2 = Uri.from "http://testing.stuff/ns#pr2"
 let pr3 = Uri.from "http://testing.stuff/ns#pr3"
 let pr4 = Uri.from "http://testing.stuff/ns#pr4"
 
-open Store
 open resource
 
 let g = Graph.from functionalProperties
@@ -45,76 +44,79 @@ let r1 = (fromSubject item1 g) |> List.head
 let r3 = (fromSubject item3 g) |> List.head
 
 [<Fact>]
-let ``Pattern match id``() = 
+let ``Pattern match id``() =
   <@ true = match r1 with
             | Is item1 _ -> true
             | _ -> false @>
 
 [<Fact>]
-let ``Fail to pattern match id``() = 
+let ``Fail to pattern match id``() =
   <@ match r1 with
      | Is item3 _ -> true
      | _ -> false @>
 
 [<Fact>]
-let ``Pattern match type``() = 
+let ``Pattern match type``() =
   test <@ true = match r1 with
                  | HasType type1 _ -> true
                  | _ -> false @>
 
 [<Fact>]
-let ``Fail to pattern match type``() = 
+let ``Fail to pattern match type``() =
   test <@ false = match r1 with
                   | HasType type2 _ -> true
                   | _ -> false @>
 
 [<Fact>]
-let ``Map object``() = 
+let ``Map object``() =
   test <@ [ "avalue" ] = match r3 with
                          | DataProperty pr3 xsd.string values -> values
                          | _ -> [] @>
 
 [<Fact>]
-let ``Traverse an object property``() = 
+let ``Traverse an object property``() =
   test <@ [ true ] = [ for r in (fromSubject item1 g) do
                          match r with
-                         | Property pr1 next -> 
+                         | Property pr1 next ->
                            for r' in traverse next do
                              yield true ] @>
 
 [<Fact>]
-let ``Traverse a blank node``() = 
+let ``Traverse a blank node``() =
   test <@ [ true ] = [ for r in (fromSubject item4 g) do
                          match r with
-                         | Property pr4 next -> 
+                         | Property pr4 next ->
                            for r' in traverse next do
                              yield true ] @>
 
 open Assertion
 
+open rdf
 [<Fact>]
-let ``Assert a resource``() = 
+let ``Assert a resource``() =
   let s = ""
   let sb = new System.Text.StringBuilder(s)
-  
-  let bob = 
-    resource !"base:id" 
+
+  let r =
+    resource !"base:id"
       [ a !"base:Type"
         objectProperty !"base:someObjectProperty" !"base:SomeOtherId"
-        dataProperty !"base:someDataProperty" ("value" ^^^ xsd.string)
-        
-        blank !"base:someBlankProperty" 
+        dataProperty !"base:someDataProperty" ("value"^^xsd.string)
+
+        blank !"base:someBlankProperty"
           [ a !"base:BankType"
-            dataProperty !"base:someDataProperty" ("value2" ^^^ xsd.string) ]
-        
-        one !"base:someOtherObjectProperty" !"base:id2" 
+            dataProperty !"base:someDataProperty" ("value2"^^xsd.string) ]
+
+        one !"base:someOtherObjectProperty" !"base:id2"
           [ a !"base:LinkedType"
-            dataProperty !"base:someDataProperty" ("value3" ^^^ xsd.string) ] ]
-  [ bob ]
+            dataProperty !"base:someDataProperty" ("value3"^^xsd.string) ] ]
+  [r]
   |> output.toGraph "http://sometest/ns#"
-  |> output.formatTTL (output.toString sb)
+  |> output.format output.ttl (output.toString sb)
   |> ignore
-  test <@ """@base <http://sometest/ns#>.
+
+  let g = Store.load Store.ttl (Store.fromString (sb.ToString()))
+  let g' = Store.load Store.ttl (Store.fromString """@base <http://sometest/ns#>.
 
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
@@ -126,7 +128,7 @@ let ``Assert a resource``() =
 @prefix compilation: <http://nice.org.uk/ns/compilation#>.
 @prefix cnt: <http://www.w3.org/2011/content#>.
 
-<base:id> <base:someBlankProperty> [<rdf:type> <base:BankType> ; 
+<base:id> <base:someBlankProperty> [<rdf:type> <base:BankType> ;
                                     <base:someDataProperty> "value2"^^xsd:string];
           <base:someDataProperty> "value"^^xsd:string;
           <base:someObjectProperty> <base:SomeOtherId>;
@@ -134,4 +136,6 @@ let ``Assert a resource``() =
           <rdf:type> <base:Type>.
 <base:id2> <base:someDataProperty> "value3"^^xsd:string;
            <rdf:type> <base:LinkedType>.
-""" = sb.ToString() @>
+""")
+
+  test <@ (Store.diff g g').AreEqual @>

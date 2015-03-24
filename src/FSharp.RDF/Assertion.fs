@@ -6,12 +6,10 @@ module Assertion =
   open VDS.RDF.Writing.Formatting
   open FSharpx
   open FSharp.RDF
-
-  type Output =
-    | Graph of VDS.RDF.IGraph
+  open Store
 
   module output =
-    let private asrt (R((S(Uri.Sys s)), xst)) (Output.Graph g) =
+    let private asrt (R((S(Uri.Sys s)), xst)) (Memory g) =
       let toVDSNode n : INode =
         match n with
         | (Literal.String s) -> s.ToLiteral g :> INode
@@ -38,16 +36,17 @@ module Assertion =
     let toGraph (baseUri) xr =
       let g = new VDS.RDF.Graph()
       Store.addPrefixes (g, baseUri)
-      let g = Graph g
+      let g = Memory g
       for r in xr do
         asrt r g
       g
 
-    let formatTTL (tw : System.IO.TextWriter) o =
+    let ttl () = CompressingTurtleWriter() :> IRdfWriter
+
+    let format (f:unit -> IRdfWriter) (tw : System.IO.TextWriter) o =
       match o with
-      | Graph g ->
-        let w = CompressingTurtleWriter()
-        w.Save(g, tw)
+      | Memory g ->
+        (f()).Save(g, tw)
         o
 
     let toString (s : System.Text.StringBuilder) = new System.IO.StringWriter(s)
@@ -56,13 +55,21 @@ module Assertion =
     let string s = Node.Literal(Literal.String s)
     let datetime d = Node.Literal(Literal.DateTimeOffset d)
 
-  let suri u = (Uri.Sys u)
   let uri u = (Uri.Sys(System.Uri u))
-  let objectProperty p o = ((P p), O(Node.Uri o, lazy []))
-  let one p o xst = ((P p), O(Node.Uri o, lazy [ R(S o, xst) ]))
-  let a t = objectProperty (uri "rdf:type") t
-  let dataProperty p o = ((P p), O(o, lazy []))
-  let blank p xst = (P p, O(Node.Blank(Blank.Blank(lazy xst)), lazy []))
-  let resource s xst = R(S s, xst)
   let (!) = uri
-  let inline (^^^) t f = f t
+  let inline (^^) t f = f t
+
+  module rdf =
+    let objectProperty p o = ((P p), O(Node.Uri o, lazy []))
+    let one p o xst = ((P p), O(Node.Uri o, lazy [ R(S o, xst) ]))
+    let a t = objectProperty (uri "rdf:type") t
+    let dataProperty p o = ((P p), O(o, lazy []))
+    let blank p xst = (P p, O(Node.Blank(Blank.Blank(lazy xst)), lazy []))
+    let resource s xst = R(S s, xst)
+
+  module owl =
+    let individual s xt xst = R(S s,
+      [
+        yield rdf.a !"owl:individual"
+        for t in xt -> rdf.a t
+      ] @ xst)

@@ -5,9 +5,10 @@ open VDS.RDF.Writing
 open VDS.RDF.Parsing
 open VDS.RDF.Nodes
 open FSharpx
+open System
 open System.Text.RegularExpressions
 
-[<CustomEquality; NoComparison>]
+[<CustomEquality;CustomComparison>]
 type Uri =
   | Sys of System.Uri
 
@@ -20,7 +21,21 @@ type Uri =
     | :? Uri as u' ->
       match u, u' with
       | Sys u, Sys u' -> string u = string u'
-    | _ -> false
+      | _ -> false
+
+  override u.GetHashCode () =
+    let (Sys uri) = u
+    u.GetHashCode()
+
+  interface IComparable<Uri> with
+        member u.CompareTo (u') = (string u).CompareTo(string u')
+  interface IComparable with
+        member u.CompareTo obj =
+            match obj with
+            | :? Uri as u' -> (u:> IComparable<_>).CompareTo u'
+            | _ -> invalidArg "obj" "not a Uri"
+  interface IEquatable<Uri> with
+        member u.Equals (u') = string u = string u'
 
   static member from s = Uri.Sys(System.Uri(s))
   static member from s = Uri.Sys s
