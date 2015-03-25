@@ -147,6 +147,8 @@ module graph =
 
     let ttl () = new TurtleParser() :> IRdfReader
 
+    let empty () = Graph ( new VDS.RDF.Graph () )
+
     let loadFormat (f:unit -> IRdfReader) (sr : System.IO.TextReader) =
         let g = new VDS.RDF.Graph()
         (f()).Load(g, sr)
