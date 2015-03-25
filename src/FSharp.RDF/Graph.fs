@@ -21,7 +21,7 @@ type Uri =
     | :? Uri as u' ->
       match u, u' with
       | Sys u, Sys u' -> string u = string u'
-      | _ -> false
+    | _ -> false
 
   override u.GetHashCode () =
     let (Sys uri) = u
@@ -126,28 +126,7 @@ and Blank =
 
 type Graph =
   | Graph of IGraph
-  static member from (s : string) =
-    let g = new VDS.RDF.Graph()
-    let p = TurtleParser()
-    use sr = new System.IO.StringReader(s)
-    p.Load(g, sr)
-    Graph g
 
-module triple =
-  let uriNode u (g : IGraph) = g.GetUriNode(u |> Uri.toSys)
-  let bySubject u (g : IGraph) = g.GetTriplesWithSubject(uriNode u g)
-  let byObject u (g : IGraph) = g.GetTriplesWithObject(uriNode u g)
-  let byPredicate u (g : IGraph) = g.GetTriplesWithPredicate(uriNode u g)
-  let byPredicateObject p o (g : IGraph) =
-    g.GetTriplesWithPredicateObject(uriNode p g, uriNode o g)
-  let bySubjectObject p o (g : IGraph) =
-    g.GetTriplesWithSubjectObject(uriNode p g, uriNode o g)
-  let bySubjectPredicate p o (g : IGraph) =
-    g.GetTriplesWithSubjectPredicate(uriNode p g, uriNode o g)
-  let fromSingle (f : Uri -> IGraph -> VDS.RDF.Triple seq) x (Graph g) =
-    f x g |> Resource.from
-  let fromDouble (f : Uri -> Uri -> IGraph -> VDS.RDF.Triple seq) x y (Graph g) =
-    f x y g |> Resource.from
 
 module prefixes =
   let prov = "http://www.w3.org/ns/prov#"
@@ -157,10 +136,55 @@ module prefixes =
   let compilation = "http://nice.org.uk/ns/compilation#"
   let git2prov = "http://nice.org.uk/ns/prov/"
 
-module uri =
-  open prefixes
 
-  let a = Uri.from (rdf + "type")
+module graph =
+    let loadFrom (s : string) =
+        let g = new VDS.RDF.Graph()
+        match s.StartsWith("http") with
+        | true -> g.LoadFromUri(System.Uri s)
+        | _ -> g.LoadFromFile s
+        Graph g
+
+    let ttl () = new TurtleParser() :> IRdfReader
+
+    let loadFormat (f:unit -> IRdfReader) (sr : System.IO.TextReader) =
+        let g = new VDS.RDF.Graph()
+        (f()).Load(g, sr)
+        Graph g
+
+    let fromString (s:string) = new System.IO.StringReader(s)
+
+    open prefixes
+
+    let addPrefixes (Sys baseUri) xp (Graph g) =
+      g.BaseUri <- baseUri
+      ("base",(Sys baseUri))::xp
+      |> List.iter
+            (fun (p, (Sys ns)) -> g.NamespaceMap.AddNamespace(p, ns))
+
+    let defaultPrefixes baseUri xp g =
+      addPrefixes baseUri ([("prov", Uri.from prov)
+                            ("rdf", Uri.from rdf)
+                            ("owl", Uri.from owl)
+                            ("git2prov", Uri.from git2prov)
+                            ("compilation", Uri.from compilation)
+                            ("cnt", Uri.from cnt) ] @ xp) g
+
+    let diff (Graph g) (Graph g') = g.Difference g'
+
+module triple =
+  let uriNode u (Graph g) = g.GetUriNode(u |> Uri.toSys)
+  let bySubject u (Graph g) = g.GetTriplesWithSubject(uriNode u (Graph g))
+  let byObject u (Graph g) = g.GetTriplesWithObject(uriNode u (Graph g))
+  let byPredicate u (Graph g) = g.GetTriplesWithPredicate(uriNode u (Graph g))
+  let byPredicateObject p o (Graph g) =
+    g.GetTriplesWithPredicateObject(uriNode p (Graph g), uriNode o (Graph g))
+  let bySubjectObject p o (Graph g) =
+    g.GetTriplesWithSubjectObject(uriNode p (Graph g), uriNode o (Graph g))
+  let bySubjectPredicate p o (Graph g) =
+    g.GetTriplesWithSubjectPredicate(uriNode p (Graph g), uriNode o (Graph g))
+  let fromSingle f x g = f x g |> Resource.from
+  let fromDouble f x y g = f x y g |> Resource.from
 
 module resource =
   open triple

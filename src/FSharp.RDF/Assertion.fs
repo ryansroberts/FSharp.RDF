@@ -9,7 +9,7 @@ module Assertion =
   open Store
 
   module output =
-    let private asrt (R((S(Uri.Sys s)), xst)) (Memory g) =
+    let private asrt (R((S(Uri.Sys s)), xst)) (FSharp.RDF.Graph g) =
       let toVDSNode n : INode =
         match n with
         | (Literal.String s) -> s.ToLiteral g :> INode
@@ -33,10 +33,9 @@ module Assertion =
       let s = g.CreateUriNode s
       asrtSt s xst
 
-    let toGraph (baseUri) xr =
-      let g = new VDS.RDF.Graph()
-      Store.addPrefixes (g, baseUri)
-      let g = Memory g
+    let toGraph baseUri xp xr =
+      let g = (Graph ( new VDS.RDF.Graph() ))
+      graph.defaultPrefixes baseUri xp g
       for r in xr do
         asrt r g
       g
@@ -45,7 +44,7 @@ module Assertion =
 
     let format (f:unit -> IRdfWriter) (tw : System.IO.TextWriter) o =
       match o with
-      | Memory g ->
+      | FSharp.RDF.Graph g ->
         (f()).Save(g, tw)
         o
 

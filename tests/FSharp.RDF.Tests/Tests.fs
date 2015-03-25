@@ -39,7 +39,7 @@ let pr4 = Uri.from "http://testing.stuff/ns#pr4"
 
 open resource
 
-let g = Graph.from functionalProperties
+let g = graph.loadFormat graph.ttl (graph.fromString functionalProperties)
 let r1 = (fromSubject item1 g) |> List.head
 let r3 = (fromSubject item3 g) |> List.head
 
@@ -111,12 +111,12 @@ let ``Assert a resource``() =
           [ a !"base:LinkedType"
             dataProperty !"base:someDataProperty" ("value3"^^xsd.string) ] ]
   [r]
-  |> output.toGraph "http://sometest/ns#"
+  |> output.toGraph (Uri.from "http://sometest/ns#") []
   |> output.format output.ttl (output.toString sb)
   |> ignore
 
-  let g = Store.load Store.ttl (Store.fromString (sb.ToString()))
-  let g' = Store.load Store.ttl (Store.fromString """@base <http://sometest/ns#>.
+  let g = graph.loadFormat graph.ttl (graph.fromString (sb.ToString()))
+  let g' = graph.loadFormat graph.ttl (graph.fromString """@base <http://sometest/ns#>.
 
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
@@ -138,4 +138,4 @@ let ``Assert a resource``() =
            <rdf:type> <base:LinkedType>.
 """)
 
-  test <@ (Store.diff g g').AreEqual @>
+  test <@ (graph.diff g g').AreEqual @>
