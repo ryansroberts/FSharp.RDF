@@ -48,7 +48,6 @@ module Assertion =
         (f()).Save(g, tw)
         o
 
-    let toString (s : System.Text.StringBuilder) = new System.IO.StringWriter(s)
 
   module xsd =
     let string s = Node.Literal(Literal.String s)

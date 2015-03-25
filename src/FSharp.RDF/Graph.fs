@@ -145,7 +145,8 @@ module graph =
         | _ -> g.LoadFromFile s
         Graph g
 
-    let ttl () = new TurtleParser() :> IRdfReader
+    module parse =
+      let ttl () = new TurtleParser() :> IRdfReader
 
     let empty () = Graph ( new VDS.RDF.Graph () )
 
@@ -173,6 +174,19 @@ module graph =
                             ("cnt", Uri.from cnt) ] @ xp) g
 
     let diff (Graph g) (Graph g') = g.Difference g'
+
+    module write =
+      let ttl () = CompressingTurtleWriter() :> IRdfWriter
+
+    let format (f:unit -> IRdfWriter) (tw : System.IO.TextWriter) o =
+      match o with
+      | Graph g ->
+        (f()).Save(g, tw)
+        o
+
+    let toString (s : System.Text.StringBuilder) = new System.IO.StringWriter(s)
+    let toFile (p) = System.IO.File.OpenWrite p
+
 
 module triple =
   let uriNode u (Graph g) = g.GetUriNode(u |> Uri.toSys)

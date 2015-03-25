@@ -39,7 +39,7 @@ let pr4 = Uri.from "http://testing.stuff/ns#pr4"
 
 open resource
 
-let g = graph.loadFormat graph.ttl (graph.fromString functionalProperties)
+let g = graph.loadFormat graph.parse.ttl (graph.fromString functionalProperties)
 let r1 = (fromSubject item1 g) |> List.head
 let r3 = (fromSubject item3 g) |> List.head
 
@@ -112,11 +112,11 @@ let ``Assert a resource``() =
             dataProperty !"base:someDataProperty" ("value3"^^xsd.string) ] ]
   [r]
   |> output.toGraph (Uri.from "http://sometest/ns#") []
-  |> output.format output.ttl (output.toString sb)
+  |> graph.format graph.write.ttl (graph.toString sb)
   |> ignore
 
-  let g = graph.loadFormat graph.ttl (graph.fromString (sb.ToString()))
-  let g' = graph.loadFormat graph.ttl (graph.fromString """@base <http://sometest/ns#>.
+  let g = graph.loadFormat graph.parse.ttl (graph.fromString (sb.ToString()))
+  let g' = graph.loadFormat graph.parse.ttl (graph.fromString """@base <http://sometest/ns#>.
 
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
