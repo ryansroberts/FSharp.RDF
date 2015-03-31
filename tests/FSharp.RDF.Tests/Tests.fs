@@ -97,6 +97,7 @@ let ``Assert a resource``() =
   let s = ""
   let sb = new System.Text.StringBuilder(s)
 
+  let og = graph.empty (!"http://sometest/ns#") []
   let r =
     resource !"base:id"
       [ a !"base:Type"
@@ -111,7 +112,7 @@ let ``Assert a resource``() =
           [ a !"base:LinkedType"
             dataProperty !"base:someDataProperty" ("value3"^^xsd.string) ] ]
   [r]
-  |> output.toGraph (graph.empty (!"http://sometest/ns#") [])
+  |> output.toGraph og
   |> graph.format graph.write.ttl (graph.toString sb)
   |> ignore
 

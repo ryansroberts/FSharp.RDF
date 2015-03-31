@@ -33,7 +33,7 @@ module Assertion =
       let s = g.CreateUriNode s
       asrtSt s xst
 
-    let toGraph xr g =
+    let toGraph g xr =
       for r in xr do
         asrt r g
       g
