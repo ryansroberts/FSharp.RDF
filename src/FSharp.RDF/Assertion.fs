@@ -33,9 +33,7 @@ module Assertion =
       let s = g.CreateUriNode s
       asrtSt s xst
 
-    let toGraph baseUri xp xr =
-      let g = (Graph ( new VDS.RDF.Graph() ))
-      graph.defaultPrefixes baseUri xp g
+    let toGraph xr g =
       for r in xr do
         asrt r g
       g

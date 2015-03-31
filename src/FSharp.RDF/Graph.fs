@@ -148,8 +148,6 @@ module graph =
     module parse =
       let ttl () = new TurtleParser() :> IRdfReader
 
-    let empty () = Graph ( new VDS.RDF.Graph () )
-
     let loadFormat (f:unit -> IRdfReader) (sr : System.IO.TextReader) =
         let g = new VDS.RDF.Graph()
         (f()).Load(g, sr)
@@ -175,17 +173,21 @@ module graph =
 
     let diff (Graph g) (Graph g') = g.Difference g'
 
+    let empty baseUri xp =
+      let g = (Graph ( new VDS.RDF.Graph() ))
+      defaultPrefixes baseUri xp g
+      g
+
+
     module write =
       let ttl () = CompressingTurtleWriter() :> IRdfWriter
 
-    let format (f:unit -> IRdfWriter) (tw : System.IO.TextWriter) o =
-      match o with
-      | Graph g ->
-        (f()).Save(g, tw)
-        o
+    let format (f:unit -> IRdfWriter) (tw : System.IO.TextWriter) (Graph g) =
+      (f()).Save(g, tw)
+      Graph g
 
     let toString (s : System.Text.StringBuilder) = new System.IO.StringWriter(s)
-    let toFile (p) = System.IO.File.OpenWrite p
+    let toFile (p) = new System.IO.StreamWriter ( System.IO.File.OpenWrite p  )
 
 
 module triple =

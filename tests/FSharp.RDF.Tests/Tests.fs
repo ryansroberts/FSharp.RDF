@@ -111,7 +111,7 @@ let ``Assert a resource``() =
           [ a !"base:LinkedType"
             dataProperty !"base:someDataProperty" ("value3"^^xsd.string) ] ]
   [r]
-  |> output.toGraph (Uri.from "http://sometest/ns#") []
+  |> output.toGraph (graph.empty (!"http://sometest/ns#") [])
   |> graph.format graph.write.ttl (graph.toString sb)
   |> ignore
 
