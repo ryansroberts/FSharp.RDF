@@ -53,6 +53,7 @@ type Node =
     | :? ILiteralNode as n ->
       (match n with
        | :? StringNode as s -> s.AsString() |> Literal.String
+       | :? DateNode as d -> d.AsDateTimeOffset() |> Literal.DateTimeOffset
        | :? DateTimeNode as d -> d.AsDateTimeOffset() |> Literal.DateTimeOffset
        | _ -> n.Value |> Literal.String)
       |> Node.Literal
@@ -257,14 +258,17 @@ module resource =
   let (|DataProperty|_|) p f r =
     match r with
     | Property p xo -> Some(mapO f xo)
+    | _ -> None
 
   let (|FunctionalDataProperty|_|) p f r =
     match r with
-    | FunctionalProperty p (O(o, _)) -> Some(f o)
+      | FunctionalProperty p (O(o, _)) -> Some(f o)
+      | _ -> None
 
   let (|Traverse|_|) p r =
     match r with
     | Property p xo -> traverse xo |> noneIfEmpty
+    | _ -> None
 
   let (|TraverseFunctional|_|) p r =
     match r with

@@ -56,6 +56,5 @@ module Store =
       w.Save(g, sw)
       s.ToString()
 
-  
-  open FSharp.RDF.prefixes
 
+  open FSharp.RDF.prefixes

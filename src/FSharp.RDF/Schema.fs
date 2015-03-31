@@ -1,5 +1,5 @@
 namespace FSharp.RDF
-module Schema =
+module OWL =
     type Constraint =
     | SomeOf of Set<Uri>
     | Only of Set<Uri>
@@ -20,4 +20,19 @@ module Schema =
     | Reflexive         = 0b000100000
     | Irreflexive       = 0b001000000
 
-    type Property = Uri * Characteristics * (Constraint list)
+    type Property = Uri * Characteristics * (Constraint list) 
+
+    type ObjectProperty = Property
+
+    type DataProperty = Property
+
+    type Class = {
+        Uri : Uri
+        Label : Literal list
+        Comments : Literal list
+        ObjectProperties : Set<ObjectProperty>
+        DataProperties : Set<(Uri * Set<Uri>)>
+        Subtypes : Set<Uri>
+        Supertypes : Set<Uri>
+        EquivalentClasses : Set<Uri>
+    }

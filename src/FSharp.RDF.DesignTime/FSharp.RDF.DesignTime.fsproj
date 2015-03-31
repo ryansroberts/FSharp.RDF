@@ -61,6 +61,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="ProvidedTypes/Code/ProvidedTypes.fs" />
+    <Compile Include="ProvidedTypes/Code/Debug.fs" />
+    <Compile Include="Reasoning.fs" />
+    <Compile Include="Gubbins.fs" />
+    <Compile Include="Generator.fs" />
+    <Compile Include="Provider.fs" />
     <Compile Include="Script.fsx" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets" />
