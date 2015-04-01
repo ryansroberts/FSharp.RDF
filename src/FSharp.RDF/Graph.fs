@@ -192,7 +192,7 @@ module graph =
 
 
 module triple =
-  let uriNode u (Graph g) = g.GetUriNode(u |> Uri.toSys)
+  let uriNode (Sys u) (Graph g) = g.CreateUriNode(u)
   let bySubject u (Graph g) = g.GetTriplesWithSubject(uriNode u (Graph g))
   let byObject u (Graph g) = g.GetTriplesWithObject(uriNode u (Graph g))
   let byPredicate u (Graph g) = g.GetTriplesWithPredicate(uriNode u (Graph g))
@@ -202,6 +202,11 @@ module triple =
     g.GetTriplesWithSubjectObject(uriNode p (Graph g), uriNode o (Graph g))
   let bySubjectPredicate p o (Graph g) =
     g.GetTriplesWithSubjectPredicate(uriNode p (Graph g), uriNode o (Graph g))
+  let byType o (Graph g) = seq {
+    for s in g.GetTriplesWithPredicateObject(uriNode (Uri.from "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") (Graph g), uriNode o (Graph g)) do
+      yield! g.GetTriplesWithSubject(s.Subject);
+    }
+
   let fromSingle f x g = f x g |> Resource.from
   let fromDouble f x y g = f x y g |> Resource.from
 
@@ -209,13 +214,13 @@ module resource =
   open triple
   open prefixes
 
-  let fromSubject u g = fromSingle bySubject u g
-  let fromPredicate u g = fromSingle byPredicate u g
-  let fromObject u g = fromSingle byObject u g
-  let fromPredicateObject x y g = fromDouble byPredicateObject x y g
-  let fromSubjectObject x y g = fromDouble bySubjectObject x y g
-  let fromSubjectPredicate x y g = fromDouble bySubjectPredicate x y g
-  let fromType u g = fromObject u g |> List.collect (function | R(S s, _) -> fromSubject s g)
+  let fromSubject  = fromSingle bySubject
+  let fromPredicate  = fromSingle byPredicate
+  let fromObject  = fromSingle byObject
+  let fromPredicateObject = fromDouble byPredicateObject
+  let fromSubjectObject  = fromDouble bySubjectObject
+  let fromSubjectPredicate  = fromDouble bySubjectPredicate
+  let fromType = fromSingle byType
 
   let asTriples (R(s,px) ) = [
       for (p, o) in px -> (s, p, o)
@@ -286,11 +291,6 @@ module resource =
 
 module xsd =
   open VDS.RDF
-
-  let mapL f n =
-    match n with
-    | Node.Literal l -> (f l)
-    | _ -> failwith (sprintf "%A is not a literal node" n)
 
   let string =
     function
