@@ -8,35 +8,37 @@ module Assertion =
   open FSharp.RDF
   open Store
 
-  module output =
-    let private asrt (R((S(Uri.Sys s)), xst)) (FSharp.RDF.Graph g) =
-      let toVDSNode n : INode =
+  module Assert =
+    let toVDSNode g n : INode =
         match n with
         | (Literal.String s) -> s.ToLiteral g :> INode
         | (Literal.DateTimeOffset d) -> d.ToLiteral g :> INode
 
-      let rec asrtSt (s : INode) xst =
-        for st in xst do
-          match st with
-          | (P(Uri.Sys p), O(Node.Blank(Blank.Blank(xst')), _)) ->
-            let b = g.CreateBlankNode()
-            g.Assert(Triple(s, g.CreateUriNode p, b)) |> ignore
-            asrtSt b xst'.Value
-          | (P(Uri.Sys p), O(Node.Uri(Sys o), xr)) ->
-            let o = g.CreateUriNode o
-            g.Assert(Triple(s, g.CreateUriNode p, o)) |> ignore
-            for R(s, xst') in xr.Value do
-              asrtSt o xst'
-          | (P(Uri.Sys p), O(Node.Literal l, _)) ->
-            g.Assert(Triple(s, g.CreateUriNode p, toVDSNode l)) |> ignore
+    let rec private assrtTriple (FSharp.RDF.Graph g) (S(Uri.Sys s),p,o) =
+      let rec assrtTriple (s:INode) (p,o) =
+        match p,o with
+            | (P(Uri.Sys p), O(Node.Blank(Blank.Blank(xst')), _)) ->
+                let b = g.CreateBlankNode()
+                g.Assert(Triple(s, g.CreateUriNode p, b)) |> ignore
+                for (p,o) in xst'.Value do assrtTriple b (p,o)
+            | (P(Uri.Sys p), O(Node.Uri(Sys o), xr)) ->
+                let o = g.CreateUriNode o
+                g.Assert(Triple(s, g.CreateUriNode p, o)) |> ignore
+                resources (Graph g) xr.Value |> ignore
+            | (P(Uri.Sys p), O(Node.Literal l, _)) ->
+                g.Assert(Triple(s, g.CreateUriNode p, toVDSNode g l)) |> ignore
 
       let s = g.CreateUriNode s
-      asrtSt s xst
+      assrtTriple s (p,o)
 
-    let toGraph g xr =
-      for r in xr do
-        asrt r g
+
+    and triples g tx =
+      for t in tx do
+        assrtTriple g t
       g
+    and resources g xr =
+      Seq.collect resource.asTriples xr
+      |> triples g
 
     let ttl () = CompressingTurtleWriter() :> IRdfWriter
 
@@ -62,6 +64,7 @@ module Assertion =
     let dataProperty p o = ((P p), O(o, lazy []))
     let blank p xst = (P p, O(Node.Blank(Blank.Blank(lazy xst)), lazy []))
     let resource s xst = R(S s, xst)
+    let triple s (p,o) = (S s,P p,O o)
 
   module owl =
     let individual s xt xst = R(S s,

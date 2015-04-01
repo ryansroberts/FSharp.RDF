@@ -112,7 +112,7 @@ let ``Assert a resource``() =
           [ a !"base:LinkedType"
             dataProperty !"base:someDataProperty" ("value3"^^xsd.string) ] ]
   [r]
-  |> output.toGraph og
+  |> Assert.resources og
   |> graph.format graph.write.ttl (graph.toString sb)
   |> ignore
 

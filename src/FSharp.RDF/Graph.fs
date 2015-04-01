@@ -215,11 +215,11 @@ module resource =
   let fromPredicateObject x y g = fromDouble byPredicateObject x y g
   let fromSubjectObject x y g = fromDouble bySubjectObject x y g
   let fromSubjectPredicate x y g = fromDouble bySubjectPredicate x y g
+  let fromType u g = fromObject u g |> List.collect (function | R(S s, _) -> fromSubject s g)
 
-  let asTriples (s, px) =
-    seq {
+  let asTriples (R(s,px) ) = [
       for (p, o) in px -> (s, p, o)
-    }
+    ]
 
   let mapObject f (O(o, _)) = f o
   let mapO f = List.map (mapObject f)
@@ -272,10 +272,8 @@ module resource =
 
   let (|TraverseFunctional|_|) p r =
     match r with
-    | Property p xo ->
-      traverse xo |> (function
-      | x :: xs -> Some x
-      | _ -> None)
+    | Property p xo -> traverse xo |> ( function | x :: xs -> Some x | _ -> None )
+    | _ -> None
 
   let (|HasType|_|) t (R(_, xs)) =
     xs
