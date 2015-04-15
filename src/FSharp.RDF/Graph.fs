@@ -136,6 +136,9 @@ module prefixes =
   let cnt = "http://www.w3.org/2011/content#"
   let compilation = "http://nice.org.uk/ns/compilation#"
   let git2prov = "http://nice.org.uk/ns/prov/"
+module wellknown =
+  open prefixes
+  let rdftype = rdf + "type" |> Uri.from
 
 
 module graph =
@@ -228,7 +231,7 @@ module resource =
 
   let mapObject f (O(o, _)) = f o
   let mapO f = List.map (mapObject f)
-  let id (R(S s, _)) = s
+  let resourceId (R(S s, _)) = s
 
   let traverse xo =
     [ for (O(_, next)) in xo do
@@ -239,7 +242,7 @@ module resource =
     | true -> Some u
     | _ -> None
 
-  let noneIfEmpty =
+  let private noneIfEmpty =
     function
     | [] -> None
     | x :: xs -> Some(x :: xs)
@@ -251,43 +254,47 @@ module resource =
     |> Seq.toList
     |> noneIfEmpty
 
-  let (|FunctionalProperty|_|) p (R(_, xs)) =
-    xs
-    |> Seq.filter (fun ((P p'), _) -> p = p')
-    |> Seq.map (fun (_, o) -> o)
-    |> Seq.toList
-    |> (function
-    | x :: xs -> Some x
-    | _ -> None)
+  let (|ObjectProperty|_|) p = function
+    | Property p x ->
+      x |> List.map (function
+                   | O(Uri u,_) -> Some u
+                   | _ -> None)
+      |> List.filter Option.isSome
+      |> List.map Option.get
+      |> noneIfEmpty
+    | _ -> None
 
-  let (|DataProperty|_|) p f r =
-    match r with
+  let private listOfOne = function
+    | x::_ -> Some x
+    | _ -> None
+
+  let (|FunctionalProperty|_|) p = function
+    | Property p x -> listOfOne x
+    | _ -> None
+
+  let (|FunctionalObjectProperty|_|) p = function
+    | ObjectProperty p x -> listOfOne x
+    | _ -> None
+
+  let (|DataProperty|_|) p f = function
     | Property p xo -> Some(mapO f xo)
     | _ -> None
 
-  let (|FunctionalDataProperty|_|) p f r =
-    match r with
-      | FunctionalProperty p (O(o, _)) -> Some(f o)
-      | _ -> None
+  let (|FunctionalDataProperty|_|) p f = function
+    | FunctionalProperty p (O(o, _)) -> Some(f o)
+    | _ -> None
 
-  let (|Traverse|_|) p r =
-    match r with
+  let (|Traverse|_|) p = function
     | Property p xo -> traverse xo |> noneIfEmpty
     | _ -> None
 
-  let (|TraverseFunctional|_|) p r =
-    match r with
-    | Property p xo -> traverse xo |> ( function | x :: xs -> Some x | _ -> None )
+  let (|TraverseFunctional|_|) p = function
+    | Traverse p xo -> listOfOne xo
     | _ -> None
 
-  let (|HasType|_|) t (R(_, xs)) =
-    xs
-    |> Seq.filter
-         (fun ((P p), (O(Uri o, _))) ->
-         p = Uri.from (prefixes.rdf + "type") && t = o)
-    |> Seq.map (fun (_, (O(Uri o, _))) -> o)
-    |> Seq.toList
-    |> noneIfEmpty
+  let (|HasType|_|) t = function
+    | ObjectProperty wellknown.rdftype xs -> List.filter ((=) t) xs |> listOfOne
+    | _ -> None
 
 module xsd =
   open VDS.RDF
