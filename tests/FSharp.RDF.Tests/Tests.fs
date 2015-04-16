@@ -97,11 +97,12 @@ let ``Assert a resource``() =
   let s = ""
   let sb = new System.Text.StringBuilder(s)
 
-  let og = graph.empty (!"http://sometest/ns#") []
+  let og = graph.empty (!"http://sometest/ns#") [("base",!"http://sometest/ns#")]
   let r =
     resource !"base:id"
       [ a !"base:Type"
         objectProperty !"base:someObjectProperty" !"base:SomeOtherId"
+        objectProperty !"base:someNonQname" !"http://google.com/stuff"
         dataProperty !"base:someDataProperty" ("value"^^xsd.string)
 
         blank !"base:someBlankProperty"
@@ -129,14 +130,15 @@ let ``Assert a resource``() =
 @prefix compilation: <http://nice.org.uk/ns/compilation#>.
 @prefix cnt: <http://www.w3.org/2011/content#>.
 
-<base:id> <base:someBlankProperty> [<rdf:type> <base:BankType> ;
-                                    <base:someDataProperty> "value2"^^xsd:string];
-          <base:someDataProperty> "value"^^xsd:string;
-          <base:someObjectProperty> <base:SomeOtherId>;
-          <base:someOtherObjectProperty> <base:id2>;
-          <rdf:type> <base:Type>.
-<base:id2> <base:someDataProperty> "value3"^^xsd:string;
-           <rdf:type> <base:LinkedType>.
+base:id base:someBlankProperty [rdf:type base:BankType ;
+                                    base:someDataProperty "value2"^^xsd:string];
+          base:someDataProperty "value"^^xsd:string;
+          base:someObjectProperty base:SomeOtherId;
+          base:someOtherObjectProperty base:id2;
+          base:someNonQname <http://google.com/stuff>;
+          rdf:type base:Type.
+base:id2 base:someDataProperty "value3"^^xsd:string;
+           rdf:type base:LinkedType.
 """)
 
-  test <@ (graph.diff g g').AreEqual @>
+  (graph.diff g g').AreEqual =? true
