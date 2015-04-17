@@ -124,7 +124,10 @@ and Resource =
 
 and Blank =
   | Blank of Lazy<Statement list>
-
+  with override x.ToString() =
+    match x with
+      | Blank xs -> sprintf "%A" (xs.Value)
+    
 type Graph =
   | Graph of IGraph
 
