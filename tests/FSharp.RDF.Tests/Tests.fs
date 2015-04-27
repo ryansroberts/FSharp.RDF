@@ -10,7 +10,7 @@ let functionalProperties = """
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix xsd: <http://www.w3.org/2001/xmlschema#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@base <http://testing.stuff/ns> .
+@base <http://testing.stuff/ns#> .
 
 :item1 rdf:type :type1;
        :pr1 :item2 .
@@ -29,7 +29,7 @@ let functionalProperties = """
 """
 let item1 = Uri.from "http://testing.stuff/ns#item1"
 let type1 = Uri.from "http://testing.stuff/ns#type1"
-let type2 = Uri.from "http://testing.stuff/ns#type2"
+let type2 = Uri.from "base:type2"
 let item3 = Uri.from "http://testing.stuff/ns#item3"
 let item4 = Uri.from "http://testing.stuff/ns#item4"
 let pr1 = Uri.from "http://testing.stuff/ns#pr1"

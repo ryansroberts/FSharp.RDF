@@ -11,6 +11,7 @@ open System.Text.RegularExpressions
 [<CustomEquality;CustomComparison>]
 type Uri =
   | Sys of System.Uri
+  | VDS of System.Uri * (System.Uri -> bool)
 
   override x.ToString() =
     match x with
@@ -20,7 +21,10 @@ type Uri =
     match u' with
     | :? Uri as u' ->
       match u, u' with
+      | VDS (u,_),VDS (_,u') -> string u = string u'
       | Sys u, Sys u' -> string u = string u'
+      | Sys u, VDS (_,f) -> f u
+      | VDS (_,f),Sys u -> f u
     | _ -> false
 
   override u.GetHashCode () =
@@ -39,6 +43,7 @@ type Uri =
 
   static member from s = Uri.Sys(System.Uri(s))
   static member from s = Uri.Sys s
+  static member from (n:IUriNode) = (Uri.VDS (n.Uri,fun u -> (n.Equals(n.Graph.CreateUriNode u))))
   static member toSys (x : Uri) = System.Uri(string x)
 
 [<CustomEquality; NoComparison>]
@@ -127,7 +132,7 @@ and Blank =
   with override x.ToString() =
     match x with
       | Blank xs -> sprintf "%A" (xs.Value)
-    
+
 type Graph =
   | Graph of IGraph
 
