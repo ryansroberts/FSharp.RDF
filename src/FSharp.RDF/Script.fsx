@@ -15,26 +15,25 @@ open resource
 
 let s = ""
 let sb = new System.Text.StringBuilder(s)
-let og = 
-  graph.empty (!"http://sometest/ns#") [ ("base", !"http://sometest/ns#") ]
+let og = Graph.empty (!"http://sometest/ns#") [ ("base", !"http://sometest/ns#") ]
 
-let r = 
-  resource !"base:id" 
+let r =
+  resource !"base:id"
     [ a (!"base:Type")
       objectProperty !"base:someObjectProperty" !"base:SomeOtherId"
       objectProperty !"base:someOtherObjectProperty" !"https://google.com/stuff"
       dataProperty !"base:someDataProperty" ("value" ^^ xsd.string)
-      
-      blank !"base:someBlankProperty" 
+
+      blank !"base:someBlankProperty"
         [ a !"base:BankType"
           dataProperty !"base:someDataProperty" ("value2" ^^ xsd.string) ]
-      
-      one !"base:someOtherObjectProperty" !"base:id2" 
+
+      one !"base:someOtherObjectProperty" !"base:id2"
         [ a !"base:LinkedType"
           dataProperty !"base:someDataProperty" ("value3" ^^ xsd.string) ] ]
 
 [ r ]
 |> Assert.resources og
-|> graph.format graph.write.ttl (graph.toString sb)
-|> ignore
+|> Graph.streamTtl og (toString sb)
+|> Seq.iter (printf "%A")
 (string sb)

@@ -39,7 +39,7 @@ let pr4 = Uri.from "http://testing.stuff/ns#pr4"
 
 open resource
 
-let g = Graph.loadFormat graph.parse.ttl (Graph.fromString functionalProperties)
+let g = Graph.loadTtl (Graph.fromString functionalProperties)
 let r1 = (Resource.fromSubject item1 g) |> Seq.head
 let r3 = (Resource.fromSubject item3 g) |> Seq.head
 
@@ -114,11 +114,11 @@ let ``Assert a resource``() =
             dataProperty !"base:someDataProperty" ("value3"^^xsd.string) ]]
   [r]
   |> Assert.graph og
-  |> Graph.format write.ttl (toString sb)
+  |> Graph.writeTtl (toString sb)
   |> ignore
 
-  let g = Graph.loadFormat graph.parse.ttl (Graph.fromString (sb.ToString()))
-  let g' = Graph.loadFormat graph.parse.ttl (Graph.fromString """@base <http://sometest/ns#>.
+  let g = Graph.loadTtl (Graph.fromString (sb.ToString()))
+  let g' = Graph.loadTtl (Graph.fromString """@base <http://sometest/ns#>.
 
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
@@ -149,7 +149,7 @@ let ``Streaming resources`` () =
   let s = ""
   let sb = new System.Text.StringBuilder(s)
 
-  let og = Graph.empty (!"http://sometest/ns#") [("base",!"http://sometest/ns#")]
+  let g = Graph.empty (!"http://sometest/ns#") [("base",!"http://sometest/ns#")]
   let r =
     resource !"http://an.id" [
       a !"base:type"
@@ -162,4 +162,9 @@ let ``Streaming resources`` () =
             dataProperty !"base:someDataProperty" ("value2"^^xsd.string) ]
       ]
   [r]
-  |> Assert.graph og
+  |> Assert.resources g
+  |> Graph.streamTtl g (toString sb)
+  |> Seq.iter (fun _ -> ())
+
+  let g' = Graph.loadTtl (Graph.fromString (sb.ToString()))
+  (Graph.diff g g').AreEqual =? true

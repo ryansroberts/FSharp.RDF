@@ -153,15 +153,30 @@ module wellknown =
 [<AutoOpen>]
 module graph =
    open prefixes
-   let toString (s : System.Text.StringBuilder) = new System.IO.StringWriter(s)
+   let toString (s : System.Text.StringBuilder) = new System.IO.StringWriter(s) :> System.IO.TextWriter
    let toFile (p) = new System.IO.StreamWriter ( System.IO.File.OpenWrite p  )
 
-   module parse =
+   module private parse =
       let ttl () = new TurtleParser() :> IRdfReader
-   module write =
+   module private formatWrite =
       let ttl () = CompressingTurtleWriter() :> IRdfWriter
-   module stream =
+   module private formatStream =
       let ttl (Graph g) = TurtleFormatter() :> ITripleFormatter
+
+   let private load (f:IRdfReader) (sr : System.IO.TextReader) =
+        let g = new VDS.RDF.Graph()
+        f.Load(g, sr)
+        Graph g
+
+   let private write (f:IRdfWriter) (tw : System.IO.TextWriter) (Graph g) =
+        f.Save(g, tw)
+
+   let private stream (f:ITripleFormatter) (tw : System.IO.TextWriter) tx = seq {
+        for t in tx do
+          f.Format(t) |> tw.WriteLine
+          yield t
+        tw.Close()
+      }
 
    type Graph with
       static member loadFrom (s : string) =
@@ -171,12 +186,7 @@ module graph =
         | _ -> g.LoadFromFile s
         Graph g
 
-      static member loadFormat (f:unit -> IRdfReader) (sr : System.IO.TextReader) =
-        let g = new VDS.RDF.Graph()
-        (f()).Load(g, sr)
-        Graph g
-
-      static member fromString (s:string) = new System.IO.StringReader(s)
+      static member fromString (s:string) = new System.IO.StringReader(s) :> System.IO.TextReader
 
 
       static member addPrefixes (Sys baseUri) xp (Graph g) =
@@ -200,12 +210,9 @@ module graph =
         Graph.defaultPrefixes baseUri xp g
         g
 
-      static member format (f:unit -> IRdfWriter) (tw : System.IO.TextWriter) (Graph g) =
-        (f()).Save(g, tw)
-        Graph g
-
-      static member stream (f:unit -> ITripleFormatter) (tw : System.IO.TextWriter) (Graph g) =
-        (fun t -> f().Format(t) |> tw.WriteLine)
+      static member streamTtl g = stream (formatStream.ttl g)
+      static member writeTtl = write (formatWrite.ttl ())
+      static member loadTtl = load (parse.ttl ())
 
 module triple =
   let uriNode (Sys u) (Graph g) = g.CreateUriNode(u)
@@ -243,9 +250,9 @@ module resource =
     static member fromSubjectPredicate  = fromDouble bySubjectPredicate
     static member fromType = fromSingle byType
     static member id (R(S s, _)) = s
-    static member asTriples (R(s,px) ) = [
+    static member asTriples (R(s,px) ) = seq {
       for (p, o) in px -> (s, p, o)
-    ]
+    }
 
   let traverse xo =
     [ for (O(_, next)) in xo do
