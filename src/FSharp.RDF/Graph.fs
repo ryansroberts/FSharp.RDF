@@ -155,7 +155,7 @@ module graph =
    open prefixes
    let toString (s : System.Text.StringBuilder) = new System.IO.StringWriter(s) :> System.IO.TextWriter
    let toFile (p) = new System.IO.StreamWriter ( System.IO.File.OpenWrite p  ) :> System.IO.TextWriter
-   let toStream (p) = new System.IO.StreamWriter ( System.IO.File.OpenWrite p  ) :> System.IO.TextWriter
+   let toStream (s:System.IO.Stream) = new System.IO.StreamWriter (s) :> System.IO.TextWriter
    let fromString (s:string) = new System.IO.StringReader(s) :> System.IO.TextReader
    let fromStream (s:System.IO.Stream) = new System.IO.StreamReader(s) :> System.IO.TextReader
 
