@@ -21,30 +21,36 @@ module Assertion =
       | "http" | "https" -> g.CreateUriNode u
       | _ -> g.CreateUriNode(string u)
 
-    let rec private assrtTriple (FSharp.RDF.Graph g) (S(Uri.Sys s), p, o) =
-      let rec assrtTriple (s : INode) (p, o) =
-        match p, o with
-        | (P(Uri.Sys p), O(Node.Blank(Blank.Blank(xst')), _)) ->
-          let b = g.CreateBlankNode()
-          g.Assert(Triple(s, uriFromPossibleQname g p, b)) |> ignore
-          for (p, o) in xst'.Value do
-            assrtTriple b (p, o)
-        | (P(Uri.Sys p), O(Node.Uri(Sys o), xr)) ->
-          let o = uriFromPossibleQname g o
-          g.Assert(Triple(s, uriFromPossibleQname g p, o)) |> ignore
-          resources (Graph g) xr.Value |> ignore
-        | (P(Uri.Sys p), O(Node.Literal l, _)) ->
-          g.Assert(Triple(s, uriFromPossibleQname g p, toVDSNode g l)) |> ignore
 
+    let rec private triple (FSharp.RDF.Graph g) (S(Uri.Sys s), p, o) =
+      let rec assrtTriple (s : INode) (p, o) = seq {
+        match p,o with
+        | (P(Uri.Sys p), O(Node.Blank(Blank.Blank(xst')), _)) -> //Blank node
+          let b = g.CreateBlankNode()
+          yield Triple(s, uriFromPossibleQname g p, b)
+          for (p, o) in xst'.Value do
+            yield! assrtTriple b (p, o)
+        | (P(Uri.Sys p), O(Node.Uri(Sys o), xr)) -> //Dependent resources
+          let o = uriFromPossibleQname g o
+          yield Triple(s, uriFromPossibleQname g p, o)
+          yield! resources (Graph g) xr.Value
+        | (P(Uri.Sys p), O(Node.Literal l, _)) -> //Literal
+          yield Triple(s, uriFromPossibleQname g p, toVDSNode g l)
+        }
       let s = uriFromPossibleQname g s
       assrtTriple s (p, o)
 
-    and triples g tx =
+    and private triples (Graph g) tx = seq {
       for t in tx do
-        assrtTriple g t
-      g
+        for t in triple (Graph g) t do
+          g.Assert t |> ignore
+          yield t
+      }
 
-    and resources g xr = Seq.collect resource.asTriples xr |> triples g
+    and graph g tx =
+      resources g tx |> Seq.iter (fun _ -> ())
+      g
+    and resources g xr = Seq.collect Resource.asTriples xr |> triples g
 
     let ttl() = CompressingTurtleWriter() :> IRdfWriter
 

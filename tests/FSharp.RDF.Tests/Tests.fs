@@ -39,9 +39,9 @@ let pr4 = Uri.from "http://testing.stuff/ns#pr4"
 
 open resource
 
-let g = graph.loadFormat graph.parse.ttl (graph.fromString functionalProperties)
-let r1 = (fromSubject item1 g) |> List.head
-let r3 = (fromSubject item3 g) |> List.head
+let g = Graph.loadFormat graph.parse.ttl (Graph.fromString functionalProperties)
+let r1 = (Resource.fromSubject item1 g) |> Seq.head
+let r3 = (Resource.fromSubject item3 g) |> Seq.head
 
 [<Fact>]
 let ``Pattern match id``() =
@@ -75,7 +75,7 @@ let ``Map object``() =
 
 [<Fact>]
 let ``Traverse an object property``() =
-  test <@ [ true ] = [ for r in (fromSubject item1 g) do
+  test <@ [ true ] = [ for r in (Resource.fromSubject item1 g) do
                          match r with
                          | Property pr1 next ->
                            for r' in traverse next do
@@ -83,7 +83,7 @@ let ``Traverse an object property``() =
 
 [<Fact>]
 let ``Traverse a blank node``() =
-  test <@ [ true ] = [ for r in (fromSubject item4 g) do
+  test <@ [ true ] = [ for r in (Resource.fromSubject item4 g) do
                          match r with
                          | Property pr4 next ->
                            for r' in traverse next do
@@ -97,7 +97,7 @@ let ``Assert a resource``() =
   let s = ""
   let sb = new System.Text.StringBuilder(s)
 
-  let og = graph.empty (!"http://sometest/ns#") [("base",!"http://sometest/ns#")]
+  let og = Graph.empty (!"http://sometest/ns#") [("base",!"http://sometest/ns#")]
   let r =
     resource !"base:id"
       [ a !"base:Type"
@@ -111,14 +111,14 @@ let ``Assert a resource``() =
 
         one !"base:someOtherObjectProperty" !"base:id2"
           [ a !"base:LinkedType"
-            dataProperty !"base:someDataProperty" ("value3"^^xsd.string) ] ]
+            dataProperty !"base:someDataProperty" ("value3"^^xsd.string) ]]
   [r]
-  |> Assert.resources og
-  |> graph.format graph.write.ttl (graph.toString sb)
+  |> Assert.graph og
+  |> Graph.format write.ttl (toString sb)
   |> ignore
 
-  let g = graph.loadFormat graph.parse.ttl (graph.fromString (sb.ToString()))
-  let g' = graph.loadFormat graph.parse.ttl (graph.fromString """@base <http://sometest/ns#>.
+  let g = Graph.loadFormat graph.parse.ttl (Graph.fromString (sb.ToString()))
+  let g' = Graph.loadFormat graph.parse.ttl (Graph.fromString """@base <http://sometest/ns#>.
 
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
@@ -141,4 +141,25 @@ base:id2 base:someDataProperty "value3"^^xsd:string;
            rdf:type base:LinkedType.
 """)
 
-  (graph.diff g g').AreEqual =? true
+  (Graph.diff g g').AreEqual =? true
+
+
+[<Fact>]
+let ``Streaming resources`` () =
+  let s = ""
+  let sb = new System.Text.StringBuilder(s)
+
+  let og = Graph.empty (!"http://sometest/ns#") [("base",!"http://sometest/ns#")]
+  let r =
+    resource !"http://an.id" [
+      a !"base:type"
+      blank !"base:someBlankProperty"
+          [ a !"base:BankType"
+            dataProperty !"base:someDataProperty" ("value1"^^xsd.string) ]
+
+      blank !"base:someBlankProperty"
+          [ a !"base:BankType"
+            dataProperty !"base:someDataProperty" ("value2"^^xsd.string) ]
+      ]
+  [r]
+  |> Assert.graph og

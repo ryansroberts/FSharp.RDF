@@ -2,6 +2,7 @@ namespace FSharp.RDF
 
 open VDS.RDF
 open VDS.RDF.Writing
+open VDS.RDF.Writing.Formatting
 open VDS.RDF.Parsing
 open VDS.RDF.Nodes
 open FSharpx
@@ -64,7 +65,7 @@ type Node =
       |> Node.Literal
     | :? IBlankNode as n ->
       let traverseBlank() =
-        n.Graph.GetTriplesWithSubject(n)
+        n.Graph.GetTriplesWithSubject n
         |> Seq.map
              (function
              | t ->
@@ -149,58 +150,62 @@ module wellknown =
   let rdftype = rdf + "type" |> Uri.from
 
 
+[<AutoOpen>]
 module graph =
-    let loadFrom (s : string) =
+   open prefixes
+   let toString (s : System.Text.StringBuilder) = new System.IO.StringWriter(s)
+   let toFile (p) = new System.IO.StreamWriter ( System.IO.File.OpenWrite p  )
+
+   module parse =
+      let ttl () = new TurtleParser() :> IRdfReader
+   module write =
+      let ttl () = CompressingTurtleWriter() :> IRdfWriter
+   module stream =
+      let ttl (Graph g) = TurtleFormatter() :> ITripleFormatter
+
+   type Graph with
+      static member loadFrom (s : string) =
         let g = new VDS.RDF.Graph()
         match s.StartsWith("http") with
         | true -> g.LoadFromUri(System.Uri s)
         | _ -> g.LoadFromFile s
         Graph g
 
-    module parse =
-      let ttl () = new TurtleParser() :> IRdfReader
-
-    let loadFormat (f:unit -> IRdfReader) (sr : System.IO.TextReader) =
+      static member loadFormat (f:unit -> IRdfReader) (sr : System.IO.TextReader) =
         let g = new VDS.RDF.Graph()
         (f()).Load(g, sr)
         Graph g
 
-    let fromString (s:string) = new System.IO.StringReader(s)
-
-    open prefixes
-
-    let addPrefixes (Sys baseUri) xp (Graph g) =
-      g.BaseUri <- baseUri
-      ("base",(Sys baseUri))::xp
-      |> List.iter
-            (fun (p, (Sys ns)) -> g.NamespaceMap.AddNamespace(p, ns))
-
-    let defaultPrefixes baseUri xp g =
-      addPrefixes baseUri ([("prov", Uri.from prov)
-                            ("rdf", Uri.from rdf)
-                            ("owl", Uri.from owl)
-                            ("git2prov", Uri.from git2prov)
-                            ("compilation", Uri.from compilation)
-                            ("cnt", Uri.from cnt) ] @ xp) g
-
-    let diff (Graph g) (Graph g') = g.Difference g'
-
-    let empty baseUri xp =
-      let g = (Graph ( new VDS.RDF.Graph() ))
-      defaultPrefixes baseUri xp g
-      g
+      static member fromString (s:string) = new System.IO.StringReader(s)
 
 
-    module write =
-      let ttl () = CompressingTurtleWriter() :> IRdfWriter
+      static member addPrefixes (Sys baseUri) xp (Graph g) =
+        g.BaseUri <- baseUri
+        ("base",(Sys baseUri))::xp
+        |> List.iter
+                (fun (p, (Sys ns)) -> g.NamespaceMap.AddNamespace(p, ns))
 
-    let format (f:unit -> IRdfWriter) (tw : System.IO.TextWriter) (Graph g) =
-      (f()).Save(g, tw)
-      Graph g
+      static member defaultPrefixes baseUri xp g =
+        Graph.addPrefixes baseUri ([("prov", Uri.from prov)
+                                    ("rdf", Uri.from rdf)
+                                    ("owl", Uri.from owl)
+                                    ("git2prov", Uri.from git2prov)
+                                    ("compilation", Uri.from compilation)
+                                    ("cnt", Uri.from cnt) ] @ xp) g
 
-    let toString (s : System.Text.StringBuilder) = new System.IO.StringWriter(s)
-    let toFile (p) = new System.IO.StreamWriter ( System.IO.File.OpenWrite p  )
+      static member diff (Graph g) (Graph g') = g.Difference g'
 
+      static member empty baseUri xp =
+        let g = (Graph ( new VDS.RDF.Graph() ))
+        Graph.defaultPrefixes baseUri xp g
+        g
+
+      static member format (f:unit -> IRdfWriter) (tw : System.IO.TextWriter) (Graph g) =
+        (f()).Save(g, tw)
+        Graph g
+
+      static member stream (f:unit -> ITripleFormatter) (tw : System.IO.TextWriter) (Graph g) =
+        (fun t -> f().Format(t) |> tw.WriteLine)
 
 module triple =
   let uriNode (Sys u) (Graph g) = g.CreateUriNode(u)
@@ -221,25 +226,26 @@ module triple =
   let fromSingle f x g = f x g |> Resource.from
   let fromDouble f x y g = f x y g |> Resource.from
 
+
+[<AutoOpen>]
 module resource =
   open triple
   open prefixes
-
-  let fromSubject  = fromSingle bySubject
-  let fromPredicate  = fromSingle byPredicate
-  let fromObject  = fromSingle byObject
-  let fromPredicateObject = fromDouble byPredicateObject
-  let fromSubjectObject  = fromDouble bySubjectObject
-  let fromSubjectPredicate  = fromDouble bySubjectPredicate
-  let fromType = fromSingle byType
-
-  let asTriples (R(s,px) ) = [
-      for (p, o) in px -> (s, p, o)
-    ]
-
   let mapObject f (O(o, _)) = f o
   let mapO f = List.map (mapObject f)
-  let resourceId (R(S s, _)) = s
+
+  type Resource with
+    static member fromSubject  = fromSingle bySubject
+    static member fromPredicate  = fromSingle byPredicate
+    static member fromObject  = fromSingle byObject
+    static member fromPredicateObject = fromDouble byPredicateObject
+    static member fromSubjectObject  = fromDouble bySubjectObject
+    static member fromSubjectPredicate  = fromDouble bySubjectPredicate
+    static member fromType = fromSingle byType
+    static member id (R(S s, _)) = s
+    static member asTriples (R(s,px) ) = [
+      for (p, o) in px -> (s, p, o)
+    ]
 
   let traverse xo =
     [ for (O(_, next)) in xo do
