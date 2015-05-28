@@ -187,6 +187,7 @@ module graph =
         Graph g
 
       static member fromString (s:string) = new System.IO.StringReader(s) :> System.IO.TextReader
+      static member fromStream (s:System.IO.Stream) = new System.IO.StreamReader(s) :> System.IO.TextReader
 
 
       static member addPrefixes (Sys baseUri) xp (Graph g) =
