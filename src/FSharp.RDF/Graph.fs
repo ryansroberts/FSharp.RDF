@@ -154,7 +154,10 @@ module wellknown =
 module graph =
    open prefixes
    let toString (s : System.Text.StringBuilder) = new System.IO.StringWriter(s) :> System.IO.TextWriter
-   let toFile (p) = new System.IO.StreamWriter ( System.IO.File.OpenWrite p  )
+   let toFile (p) = new System.IO.StreamWriter ( System.IO.File.OpenWrite p  ) :> System.IO.TextWriter
+   let toStream (p) = new System.IO.StreamWriter ( System.IO.File.OpenWrite p  ) :> System.IO.TextWriter
+   let fromString (s:string) = new System.IO.StringReader(s) :> System.IO.TextReader
+   let fromStream (s:System.IO.Stream) = new System.IO.StreamReader(s) :> System.IO.TextReader
 
    module private parse =
       let ttl () = new TurtleParser() :> IRdfReader
@@ -185,10 +188,6 @@ module graph =
         | true -> g.LoadFromUri(System.Uri s)
         | _ -> g.LoadFromFile s
         Graph g
-
-      static member fromString (s:string) = new System.IO.StringReader(s) :> System.IO.TextReader
-      static member fromStream (s:System.IO.Stream) = new System.IO.StreamReader(s) :> System.IO.TextReader
-
 
       static member addPrefixes (Sys baseUri) xp (Graph g) =
         g.BaseUri <- baseUri

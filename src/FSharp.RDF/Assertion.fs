@@ -33,14 +33,14 @@ module Assertion =
         | (P(Uri.Sys p), O(Node.Uri(Sys o), xr)) -> //Dependent resources
           let o = uriFromPossibleQname g o
           yield Triple(s, uriFromPossibleQname g p, o)
-          yield! resources (Graph g) xr.Value
+          yield! triples (Graph g) xr.Value
         | (P(Uri.Sys p), O(Node.Literal l, _)) -> //Literal
           yield Triple(s, uriFromPossibleQname g p, toVDSNode g l)
         }
       let s = uriFromPossibleQname g s
       assrtTriple s (p, o)
 
-    and private triples (Graph g) tx = seq {
+    and private asrtTriples (Graph g) tx = seq {
       for t in tx do
         for t in triple (Graph g) t do
           g.Assert t |> ignore
@@ -48,9 +48,9 @@ module Assertion =
       }
 
     and graph g tx =
-      resources g tx |> Seq.iter (fun _ -> ())
+      triples g tx |> Seq.iter (fun _ -> ())
       g
-    and resources g xr = Seq.collect Resource.asTriples xr |> triples g
+    and triples g (xr:Resource seq) = Seq.collect Resource.asTriples xr |> asrtTriples g
 
     let ttl() = CompressingTurtleWriter() :> IRdfWriter
 

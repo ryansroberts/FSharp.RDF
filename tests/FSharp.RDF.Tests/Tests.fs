@@ -39,7 +39,7 @@ let pr4 = Uri.from "http://testing.stuff/ns#pr4"
 
 open resource
 
-let g = Graph.loadTtl (Graph.fromString functionalProperties)
+let g = Graph.loadTtl (fromString functionalProperties)
 let r1 = (Resource.fromSubject item1 g) |> Seq.head
 let r3 = (Resource.fromSubject item3 g) |> Seq.head
 
@@ -117,8 +117,8 @@ let ``Assert a resource``() =
   |> Graph.writeTtl (toString sb)
   |> ignore
 
-  let g = Graph.loadTtl (Graph.fromString (sb.ToString()))
-  let g' = Graph.loadTtl (Graph.fromString """@base <http://sometest/ns#>.
+  let g = Graph.loadTtl (fromString (sb.ToString()))
+  let g' = Graph.loadTtl (fromString """@base <http://sometest/ns#>.
 
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
@@ -162,9 +162,9 @@ let ``Streaming resources`` () =
             dataProperty !"base:someDataProperty" ("value2"^^xsd.string) ]
       ]
   [r]
-  |> Assert.resources g
+  |> Assert.triples g
   |> Graph.streamTtl g (toString sb)
   |> Seq.iter (fun _ -> ())
 
-  let g' = Graph.loadTtl (Graph.fromString (sb.ToString()))
+  let g' = Graph.loadTtl (fromString (sb.ToString()))
   (Graph.diff g g').AreEqual =? true
