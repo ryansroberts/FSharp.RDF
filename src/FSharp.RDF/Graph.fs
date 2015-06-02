@@ -176,9 +176,8 @@ module graph =
 
    let private stream (f:ITripleFormatter) (tw : System.IO.TextWriter) tx = seq {
         for t in tx do
-          f.Format(t) |> tw.WriteLine
+          f.Format t |> tw.WriteLine
           yield t
-        tw.Close()
       }
 
    type Graph with
