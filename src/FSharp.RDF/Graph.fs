@@ -209,6 +209,13 @@ module graph =
         Graph.defaultPrefixes baseUri xp g
         g
 
+      static member threadSafe (Graph g) =
+        let g' = new ThreadSafeGraph(g.Triples)
+        g'.BaseUri <- g.BaseUri
+        for p in g.NamespaceMap.Prefixes do
+          g'.NamespaceMap.AddNamespace(p,g.NamespaceMap.GetNamespaceUri p)
+        Graph g
+
       static member streamTtl g = stream (formatStream.ttl g)
       static member writeTtl = write (formatWrite.ttl ())
       static member loadTtl = load (parse.ttl ())
