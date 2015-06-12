@@ -168,3 +168,26 @@ let ``Streaming resources`` () =
 
   let g' = Graph.loadTtl (fromString (sb.ToString()))
   (Graph.diff g g').AreEqual =? true
+
+
+open JsonLD.Core
+[<Fact>]
+let ``Convert asserted resource to ld graph`` () =
+  let s = ""
+  let sb = new System.Text.StringBuilder(s)
+
+  let g = Graph.empty (!"http://sometest/ns#") [("base",!"http://sometest/ns#")]
+  let r =
+      resource !"http://an.id" [
+        a !"base:type"
+        blank !"base:someBlankProperty"
+            [ a !"base:BankType"
+              dataProperty !"base:someDataProperty" ("value1"^^xsd.string) ]
+
+        blank !"base:someBlankProperty"
+            [ a !"base:BankType"
+              dataProperty !"base:someDataProperty" ("value2"^^xsd.string) ]
+        ]
+  let ld = Resource.toJsonLD(JsonLdOptions()) r |> Seq.head
+
+  (string ld) =? ""

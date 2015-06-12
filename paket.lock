@@ -22,17 +22,17 @@ NUGET
     Microsoft.Net.Http (2.2.29)
       Microsoft.Bcl (>= 1.1.10)
       Microsoft.Bcl.Build (>= 1.0.14)
-    Newtonsoft.Json (6.0.8) - framework: portable-net40+sl40+win+wp80+MonoAndroid10+MonoTouch10, >= net35, >= net35, >= net40, >= net40
+    Newtonsoft.Json (6.0.8) - framework: portable-net40+sl40+win+wp80+monoandroid10+monotouch10, >= net35, >= net35, >= net40, >= net40
     NuGet.CommandLine (2.8.5)
-    Octokit (0.12.0)
+    Octokit (0.12.0) - framework: portable-net40+sl40+win+wp80+monoandroid10+monotouch10, >= net35, >= net35, >= net40, >= net40
       Microsoft.Net.Http
     SourceLink.Fake (0.5.0)
     Unquote (2.2.2)
-    VDS.Common (1.5.0) - framework: portable-net40+sl40+win+wp80+MonoAndroid10+MonoTouch10, >= net35, >= net35, >= net40, >= net40
+    VDS.Common (1.5.0) - framework: portable-net40+sl40+win+wp80+monoandroid10+monotouch10, >= net35, >= net35, >= net40, >= net40
     xunit (1.9.2)
     xunit.runners (1.9.2)
 GITHUB
   remote: fsharp/FAKE
   specs:
-    modules/Octokit/Octokit.fsx (308e9460802a7c415b83efe5b98c5804aa395680)
+    modules/Octokit/Octokit.fsx (8df5fa084bd2447427f295d3b35a131910aa054c)
       Octokit

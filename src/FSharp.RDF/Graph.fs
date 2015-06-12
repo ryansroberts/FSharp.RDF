@@ -17,6 +17,7 @@ type Uri =
   override x.ToString() =
     match x with
     | Sys uri -> string uri
+    | VDS (uri,_) -> string uri
 
   override u.Equals(u') =
     match u' with
@@ -29,8 +30,7 @@ type Uri =
     | _ -> false
 
   override u.GetHashCode () =
-    let (Sys uri) = u
-    u.GetHashCode()
+    (Uri.toSys u).GetHashCode()
 
   interface IComparable<Uri> with
         member u.CompareTo (u') = (string u).CompareTo(string u')
@@ -45,7 +45,7 @@ type Uri =
   static member from s = Uri.Sys(System.Uri(s))
   static member from s = Uri.Sys s
   static member from (n:IUriNode) = (Uri.VDS (n.Uri,fun u -> (n.Equals(n.Graph.CreateUriNode u))))
-  static member toSys (x : Uri) = System.Uri(string x)
+  static member toSys = function | Sys u -> u | VDS (u,_) -> u
 
 [<CustomEquality; NoComparison>]
 type Node =
@@ -112,7 +112,6 @@ and Object =
     | n -> O(n, lazy [])
 
 and Statement = Predicate * Object
-
 and Triple = Subject * Predicate * Object
 
 and Resource =
@@ -132,7 +131,8 @@ and Blank =
   | Blank of Lazy<Statement list>
   with override x.ToString() =
     match x with
-      | Blank xs -> sprintf "%A" (xs.Value)
+    | Blank xs -> sprintf "%A" (xs.Value)
+
 
 type Graph =
   | Graph of IGraph
@@ -152,6 +152,10 @@ module wellknown =
 
 [<AutoOpen>]
 module graph =
+
+
+   let hasSubject (S s) (P p, O (o,xs)) = (S s,P p, O (o,xs))
+   let hasPredicate (P p) (O (o,xs)) = (P p, O (o,xs))
    open prefixes
    let toString (s : System.Text.StringBuilder) = new System.IO.StringWriter(s) :> System.IO.TextWriter
    let toFile (p) = new System.IO.StreamWriter ( System.IO.File.OpenWrite p  ) :> System.IO.TextWriter
@@ -188,11 +192,11 @@ module graph =
         | _ -> g.LoadFromFile s
         Graph g
 
-      static member addPrefixes (Sys baseUri) xp (Graph g) =
-        g.BaseUri <- baseUri
-        ("base",(Sys baseUri))::xp
+      static member addPrefixes (baseUri) xp (Graph g) =
+        g.BaseUri <- (Uri.toSys baseUri)
+        ("base",baseUri)::xp
         |> List.iter
-                (fun (p, (Sys ns)) -> g.NamespaceMap.AddNamespace(p, ns))
+                (fun (p, ns) -> g.NamespaceMap.AddNamespace(p, Uri.toSys ns))
 
       static member defaultPrefixes baseUri xp g =
         Graph.addPrefixes baseUri ([("prov", Uri.from prov)
@@ -221,7 +225,7 @@ module graph =
       static member loadTtl = load (parse.ttl ())
 
 module triple =
-  let uriNode (Sys u) (Graph g) = g.CreateUriNode(u)
+  let uriNode u (Graph g) = g.CreateUriNode(Uri.toSys u)
   let bySubject u (Graph g) = g.GetTriplesWithSubject(uriNode u (Graph g))
   let byObject u (Graph g) = g.GetTriplesWithObject(uriNode u (Graph g))
   let byPredicate u (Graph g) = g.GetTriplesWithPredicate(uriNode u (Graph g))

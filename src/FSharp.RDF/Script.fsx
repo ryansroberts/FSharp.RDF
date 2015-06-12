@@ -2,7 +2,11 @@
 #r "../../packages/VDS.Common/lib/net40-client/VDS.Common.dll"
 #r "../../packages/FSharpx.Core/lib/40/FSharpx.Core.dll"
 #r "../../packages/Unquote/lib/net40/Unquote.dll"
+#r "../../packages/json-ld.net/lib/net40-Client/JsonLD.dll"
+#r "../../packages/Newtonsoft.Json/lib/net40/Newtonsoft.Json.dll"
+
 #load "Graph.fs"
+#load "JsonLd.fs"
 #load "Store.fs"
 #load "Assertion.fs"
 
@@ -12,6 +16,7 @@ open Swensen.Unquote
 open Assertion
 open rdf
 open resource
+open JsonLD.Core
 
 let s = ""
 let sb = new System.Text.StringBuilder(s)
@@ -32,8 +37,6 @@ let r =
         [ a !"base:LinkedType"
           dataProperty !"base:someDataProperty" ("value3" ^^ xsd.string) ] ]
 
-[ r ]
-|> Assert.resources og
-|> Graph.streamTtl og (toString sb)
-|> Seq.iter (printf "%A")
-(string sb)
+let ld = Resource.toJsonLD(JsonLdOptions()) r |> Seq.head
+
+(string ld)
