@@ -171,14 +171,13 @@ let ``Streaming resources`` () =
 
 
 open JsonLD.Core
-[<Fact>]
 let ``Convert asserted resource to ld graph`` () =
   let s = ""
   let sb = new System.Text.StringBuilder(s)
 
   let g = Graph.empty (!"http://sometest/ns#") [("base",!"http://sometest/ns#")]
   let r =
-      resource !"http://an.id" [
+      resource !"http://ld.nice/resource#231231" [
         a !"base:type"
         blank !"base:someBlankProperty"
             [ a !"base:BankType"
@@ -188,6 +187,11 @@ let ``Convert asserted resource to ld graph`` () =
             [ a !"base:BankType"
               dataProperty !"base:someDataProperty" ("value2"^^xsd.string) ]
         ]
-  let ld = Resource.toJsonLD(JsonLdOptions()) r |> Seq.head
+  let opts = JsonLdOptions()
+  opts.SetCompactArrays(true)
+  opts.SetUseRdfType(true)
+  opts.SetEmbed(System.Nullable(true))
+
+  let ld = Resource.toJsonLD(JsonLdOptions()) r
 
   (string ld) =? ""

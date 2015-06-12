@@ -22,22 +22,22 @@ module Assertion =
       | _ -> g.CreateUriNode(string u)
 
 
-    let rec private triple (FSharp.RDF.Graph g) (S(Uri.Sys s), p, o) =
+    let rec private triple (FSharp.RDF.Graph g) (S s, p, o) =
       let rec assrtTriple (s : INode) (p, o) = seq {
         match p,o with
-        | (P(Uri.Sys p), O(Node.Blank(Blank.Blank(xst')), _)) -> //Blank node
+        | (P p, O(Node.Blank(Blank.Blank(xst')), _)) -> //Blank node
           let b = g.CreateBlankNode()
-          yield Triple(s, uriFromPossibleQname g p, b)
+          yield Triple(s, uriFromPossibleQname g (Uri.toSys p), b)
           for (p, o) in xst'.Value do
             yield! assrtTriple b (p, o)
-        | (P(Uri.Sys p), O(Node.Uri(Sys o), xr)) -> //Dependent resources
-          let o = uriFromPossibleQname g o
-          yield Triple(s, uriFromPossibleQname g p, o)
+        | (P p, O(Node.Uri(o), xr)) -> //Dependent resources
+          let o = uriFromPossibleQname g (Uri.toSys o)
+          yield Triple(s, uriFromPossibleQname g (Uri.toSys p), o)
           yield! triples (Graph g) xr.Value
-        | (P(Uri.Sys p), O(Node.Literal l, _)) -> //Literal
-          yield Triple(s, uriFromPossibleQname g p, toVDSNode g l)
+        | (P p, O(Node.Literal l, _)) -> //Literal
+          yield Triple(s, uriFromPossibleQname g (Uri.toSys p), toVDSNode g l)
         }
-      let s = uriFromPossibleQname g s
+      let s = uriFromPossibleQname g (Uri.toSys s)
       assrtTriple s (p, o)
 
     and private asrtTriples (Graph g) tx = seq {

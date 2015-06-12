@@ -10,22 +10,29 @@ module JsonLD =
 
     let namer () = UniqueNamer("_:b")
 
-    let rec private triple (n:UniqueNamer) (d:RDFDataset) (S s,P p,O (o,xt)) =
+    //Handle jsonld blank nodes seperately from underlying subject
+    type LS =
+      | S' of Subject
+      | BNode of string
+
+    let private liftBS (s,p,o) = (S' s,p,o)
+
+    let rec private triple (n:UniqueNamer) (d:RDFDataset) (s:LS,P p,O (o,xt)) =
 
       let obj =
         match o with
         | Uri x ->
           xt.Value
           |> Seq.collect Resource.asTriples
+          |> Seq.map liftBS
           |> Seq.iter (triple n d)
-
           Uri.toSys x |> string
+
         | Node.Blank (Blank xs) ->
           let name = n.GetName()
-          let s = (S (name |> Uri.from))
           xs.Value
-          |> Seq.map  (hasSubject s)
-          |> Seq.iter (triple n d )
+          |> Seq.map  (fun (p,o) -> (BNode name,p,o))
+          |> Seq.iter (triple n d)
 
           name
         | Literal x ->
@@ -41,13 +48,18 @@ module JsonLD =
               | DateTimeOffset x -> Some "xsd:datetimeoffset"
           | _ -> None
 
+      let subject =
+        match s with
+          | S' (Subject.S s) -> Uri.toSys s |> string
+          | BNode s -> s
+
       match data with
-        | Some data -> d.AddTriple (Uri.toSys s |> string,
+        | Some data -> d.AddTriple (subject,
                                     Uri.toSys p |> string,
                                     obj,
                                     data,
                                     "en")
-        | None -> d.AddTriple (Uri.toSys s |> string,
+        | None -> d.AddTriple (subject,
                                Uri.toSys p |> string,
                                obj)
 
@@ -57,6 +69,9 @@ module JsonLD =
         let n = namer()
         let d = RDFDataset()
         Resource.asTriples r
+        |> Seq.map liftBS
         |> Seq.iter (triple n d)
 
-        JsonLdApi(o).FromRDF d
+        let api = JsonLdApi(o)
+        api.Normalize(d) |> ignore
+        api.FromRDF d
