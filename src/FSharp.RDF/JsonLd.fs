@@ -7,10 +7,24 @@ module JsonLD =
     open JsonLD.Core
     open FSharp.RDF
 
+    type Config =
+      | Config of JsonLdOptions
+
+    [<AutoOpen>]
+    module config =
+     type Config with
+       static member context x (Config c) = c.SetExpandContext x;(Config c)
+       static member compactArrays x (Config c) = c.SetCompactArrays x;(Config c)
+       static member useRDFType x (Config c) = c.SetUseRdfType x;(Config c)
+       static member useNativeTypes x (Config c) = c.SetUseNativeTypes x;(Config c)
+       static member produceGeneralisedRdf x (Config c) = c.SetProduceGeneralizedRdf x;(Config c)
+       static member omitDefault x (Config c) = c.SetOmitDefault x;(Config c)
+       static member setExplicit x (Config c) = c.SetExplicit x;(Config c)
+       static member setEmbed x (Config c) = c.SetEmbed x;(Config c)
 
     let namer () = UniqueNamer("_:b")
 
-    //Handle jsonld blank nodes seperately from underlying subject
+    //Lifted type to jsonld blank nodes seperately from underlying subject
     type LS =
       | S' of Subject
       | BNode of string
