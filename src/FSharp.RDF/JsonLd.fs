@@ -78,11 +78,10 @@ module JsonLD =
                                obj)
 
     type Resource with
-      //Returns LD subgraph for the resource and all its asserted dependencies
-      static member toJsonLD (o:JsonLdOptions) r =
+      static member toJsonLD (o:JsonLdOptions) xr =
         let n = namer()
         let d = RDFDataset()
-        Resource.asTriples r
+        Seq.collect Resource.asTriples xr
         |> Seq.map liftBS
         |> Seq.iter (triple n d)
 

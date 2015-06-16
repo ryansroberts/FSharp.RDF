@@ -192,6 +192,6 @@ let ``Convert asserted resource to ld graph`` () =
   opts.SetUseRdfType(true)
   opts.SetEmbed(System.Nullable(true))
 
-  let ld = Resource.toJsonLD(JsonLdOptions()) r
+  let ld = Resource.toJsonLD(JsonLdOptions()) [r]
 
   (string ld) =? ""
