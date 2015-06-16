@@ -39,9 +39,43 @@
     <Reference Include="System.Numerics" />
     <Reference Include="System.Xml" />
     <Reference Include="FSharp.Core" />
+    <Reference Include="IKVM.Runtime.JNI">
+      <HintPath>..\..\lib\owlapi.net_release_1_0_0\IKVM.Runtime.JNI.dll</HintPath>
+    </Reference>
+    <Reference Include="owlapi">
+      <HintPath>..\..\lib\owlapi.net_release_1_0_0\owlapi.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.Runtime">
+      <HintPath>..\..\lib\owlapi.net_release_1_0_0\IKVM.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.XML.API">
+      <HintPath>..\..\lib\owlapi.net_release_1_0_0\IKVM.OpenJDK.XML.API.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.XML.Parse">
+      <HintPath>..\..\lib\owlapi.net_release_1_0_0\IKVM.OpenJDK.XML.Parse.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Core">
+      <HintPath>..\..\lib\owlapi.net_release_1_0_0\IKVM.OpenJDK.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Charsets">
+      <HintPath>..\..\lib\owlapi.net_release_1_0_0\IKVM.OpenJDK.Charsets.dll</HintPath>
+    </Reference>
+    <Reference Include="IKVM.OpenJDK.Naming">
+      <HintPath>..\..\lib\owlapi.net_release_1_0_0\IKVM.OpenJDK.Naming.dll</HintPath>
+    </Reference>
+    <Reference Include="Cognitum.OwlApi.Net.ReasonerInterface">
+      <HintPath>..\..\lib\owlapi.net_release_1_0_0\Cognitum.OwlApi.Net.ReasonerInterface.dll</HintPath>
+    </Reference>
+    <Reference Include="Cognitum.OwlApi.Net.Pellet">
+      <HintPath>..\..\lib\owlapi.net_release_1_0_0\Reasoners\Pellet\Cognitum.OwlApi.Net.Pellet.dll</HintPath>
+    </Reference>
+    <Reference Include="pellet">
+      <HintPath>..\..\lib\owlapi.net_release_1_0_0\Reasoners\Pellet\pellet.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Graph.fs" />
+    <Compile Include="Ontology.fs" />
     <Compile Include="JsonLd.fs" />
     <Compile Include="Store.fs" />
     <Compile Include="Sparql.fs" />

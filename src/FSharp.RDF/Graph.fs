@@ -8,6 +8,7 @@ open VDS.RDF.Nodes
 open FSharpx
 open System
 open System.Text.RegularExpressions
+open VDS.RDF.Ontology
 
 [<CustomEquality;CustomComparison>]
 type Uri =
@@ -153,7 +154,6 @@ module wellknown =
 [<AutoOpen>]
 module graph =
 
-
    let hasSubject (S s) (P p, O (o,xs)) = (S s,P p, O (o,xs))
    let hasPredicate (P p) (O (o,xs)) = (P p, O (o,xs))
    open prefixes
@@ -185,6 +185,8 @@ module graph =
       }
 
    type Graph with
+
+
       static member loadFrom (s : string) =
         let g = new VDS.RDF.Graph()
         match s.StartsWith("http") with
@@ -220,7 +222,7 @@ module graph =
         g'.BaseUri <- g.BaseUri
         for p in g.NamespaceMap.Prefixes do
           g'.NamespaceMap.AddNamespace(p,g.NamespaceMap.GetNamespaceUri p)
-        Graph g
+        Graph g'
 
       static member streamTtl g = stream (formatStream.ttl g)
       static member writeTtl = write (formatWrite.ttl ())
@@ -228,6 +230,7 @@ module graph =
 
 module triple =
   let uriNode u (Graph g) = g.CreateUriNode(Uri.toSys u)
+  let private rdfType = Uri.from "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
   let bySubject u (Graph g) = g.GetTriplesWithSubject(uriNode u (Graph g))
   let byObject u (Graph g) = g.GetTriplesWithObject(uriNode u (Graph g))
   let byPredicate u (Graph g) = g.GetTriplesWithPredicate(uriNode u (Graph g))
@@ -238,7 +241,7 @@ module triple =
   let bySubjectPredicate p o (Graph g) =
     g.GetTriplesWithSubjectPredicate(uriNode p (Graph g), uriNode o (Graph g))
   let byType o (Graph g) = seq {
-    for s in g.GetTriplesWithPredicateObject(uriNode (Uri.from "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") (Graph g), uriNode o (Graph g)) do
+    for s in g.GetTriplesWithPredicateObject(uriNode rdfType (Graph g), uriNode o (Graph g)) do
       yield! g.GetTriplesWithSubject(s.Subject);
     }
 
