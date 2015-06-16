@@ -208,6 +208,8 @@ module graph =
 
       static member diff (Graph g) (Graph g') = g.Difference g'
 
+      static member merge (Graph g) (Graph g') = g.Merge(g');Graph g
+
       static member empty baseUri xp =
         let g = (Graph ( new VDS.RDF.Graph() ))
         Graph.defaultPrefixes baseUri xp g
