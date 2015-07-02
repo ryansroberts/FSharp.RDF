@@ -18,93 +18,93 @@ open org.semanticweb.owlapi.model
 open org.semanticweb.owlapi.reasoner
 open Microsoft.FSharp.Linq.RuntimeHelpers
 
-type Ontology = 
+type Ontology =
   | Ontology of OWLOntology
 
-type Reasoner = 
+type Reasoner =
   | Reasoner of OWLReasoner
 
-type DataFactory = 
+type DataFactory =
   | Factory of OWLDataFactory
 
 type Uri with
   static member fromIRI (iri : IRI) = Uri.from (iri.toString())
   static member fromHasUri (has : HasIRI) = Uri.from ((has.getIRI()).toString())
 
-let rec iter<'a> (nx : java.util.Set) = 
+let rec iter<'a> (nx : java.util.Set) =
   match nx with
   | :? NodeSet as nx -> iter<'a> (nx.getFlattened())
-  | _ -> 
+  | _ ->
     [ let i = nx.iterator()
       while i.hasNext() do
         yield i.next() :?> 'a ]
 
-let rec splitIntersections (c : obj) = 
+let rec splitIntersections (c : obj) =
   [ match c with
-    | :? OWLObjectIntersectionOf as x -> 
+    | :? OWLObjectIntersectionOf as x ->
       yield! x.getClassesInSignature()
              |> iter<OWLEntity>
              |> List.map splitIntersections
              |> List.concat
     | :? HasIRI as x -> yield Uri.fromHasUri x ]
 
-type ReasoningContext = 
+type ReasoningContext =
   { Ontology : OWLOntology
     Reasoner : OWLReasoner
     DataFactory : OWLDataFactory }
-  static member create (o, r, f) = 
+  static member create (o, r, f) =
     match o, r, f with
-    | Ontology o, Reasoner r, Factory f -> 
+    | Ontology o, Reasoner r, Factory f ->
       { Ontology = o
         Reasoner = r
         DataFactory = f }
 
-let characteristicsOf ctx (p : OWLPropertyExpression) = 
-  let test f p = 
+let characteristicsOf ctx (p : OWLPropertyExpression) =
+  let test f p =
     if f then p
     else Characteristics.None
-  
-  let isFunctionalObject p = 
+
+  let isFunctionalObject p =
     ctx.DataFactory.getOWLObjectMinCardinality (2, p)
     |> ctx.Reasoner.isSatisfiable
     |> not
-  
-  let isFunctionalData p = 
+
+  let isFunctionalData p =
     ctx.DataFactory.getOWLDataMinCardinality (2, p)
     |> ctx.Reasoner.isSatisfiable
     |> not
-  
+
   match p with
-  | :? OWLObjectProperty as p -> 
-    test (isFunctionalObject (p)) Characteristics.Functional 
-    ||| test (p.isInverseFunctional (ctx.Ontology)) 
-          Characteristics.InverseFunctional 
-    ||| test (p.isTransitive (ctx.Ontology)) Characteristics.Transitive 
-    ||| test (p.isSymmetric (ctx.Ontology)) Characteristics.Symmetric 
-    ||| test (p.isAsymmetric (ctx.Ontology)) Characteristics.Asymmetric 
-    ||| test (p.isReflexive (ctx.Ontology)) Characteristics.Reflexive 
+  | :? OWLObjectProperty as p ->
+    test (isFunctionalObject (p)) Characteristics.Functional
+    ||| test (p.isInverseFunctional (ctx.Ontology))
+          Characteristics.InverseFunctional
+    ||| test (p.isTransitive (ctx.Ontology)) Characteristics.Transitive
+    ||| test (p.isSymmetric (ctx.Ontology)) Characteristics.Symmetric
+    ||| test (p.isAsymmetric (ctx.Ontology)) Characteristics.Asymmetric
+    ||| test (p.isReflexive (ctx.Ontology)) Characteristics.Reflexive
     ||| test (p.isIrreflexive (ctx.Ontology)) Characteristics.Irreflexive
-  | :? OWLDataProperty as p -> 
+  | :? OWLDataProperty as p ->
     test (isFunctionalData (p)) Characteristics.Functional
 
 (*Vistors look like hell in fs*)
-type propertyExtractor(ctx) = 
+type propertyExtractor(ctx) =
   let mutable extracted : Set<Uri * Characteristics * Constraint> = Set.empty
   member x.Extracted() = extracted
-  
-  member x.extract (node : OWLQuantifiedRestriction) f = 
+
+  member x.extract (node : OWLQuantifiedRestriction) f =
     let prop = node.getProperty()
     if (prop.isAnonymous()) then x.visitNode (prop)
-    else 
+    else
       let uriOf p = Uri.from ((string p).Substring(1, (string p).Length - 2))
       (*Hack, find better way to extract uri*)
-      extracted <- extracted.Add(uriOf prop, characteristicsOf ctx prop, 
+      extracted <- extracted.Add(uriOf prop, characteristicsOf ctx prop,
                                  f (node.getFiller().getClassesInSignature()
                                     |> iter<OWLClass>
                                     |> List.map Uri.fromHasUri
                                     |> Set.ofList))
-  
-  member private x.visitNode (node : OWLObject) : unit = 
+
+  member private x.visitNode (node : OWLObject) : unit =
     match node with
     | :? OWLObjectIntersectionOf as e -> e.accept x
     | :? OWLObjectComplementOf as e -> e.accept x
@@ -122,29 +122,29 @@ type propertyExtractor(ctx) =
     | :? OWLDataMaxCardinality as e -> e.accept x
     | sc -> ()
     ()
-  
+
   interface OWLClassExpressionVisitor with
-    
-    member x.visit (node : OWLClass) = 
+
+    member x.visit (node : OWLClass) =
       node.getSuperClasses (ctx.Ontology)
       |> iter<OWLObject>
       |> List.iter (x.visitNode)
       ()
-    
-    member x.visit (node : OWLObjectIntersectionOf) = 
+
+    member x.visit (node : OWLObjectIntersectionOf) =
       node.getOperands()
       |> iter<OWLClass>
       |> List.iter (fun e -> e.accept (x))
       ()
-    
+
     member x.visit (node : OWLObjectComplementOf) = node.getOperand().accept(x)
-    
-    member x.visit (node : OWLObjectUnionOf) = 
+
+    member x.visit (node : OWLObjectUnionOf) =
       node.getOperands()
       |> iter<OWLClass>
       |> List.iter (fun e -> e.accept (x))
       ()
-    
+
     member x.visit (node : OWLDataAllValuesFrom) = x.extract node SomeOf
     member x.visit (node : OWLDataSomeValuesFrom) = x.extract node SomeOf
     member x.visit (node : OWLDataHasValue) = ()
@@ -162,17 +162,17 @@ type propertyExtractor(ctx) =
 
 let extractIri ex = ex |> List.map Uri.fromHasUri
 
-let objectProperties ctx (c : OWLClass) = 
-  let firstCharacteristic cx = 
+let objectProperties ctx (c : OWLClass) =
+  let firstCharacteristic cx =
     cx
     |> Seq.map (fun (_, x, _) -> x)
     |> Seq.head
-  
-  let constraints cx = 
+
+  let constraints cx =
     cx
     |> Seq.map (fun (_, _, x) -> x)
     |> List.ofSeq
-  
+
   let px = propertyExtractor ctx
   (px :> OWLClassExpressionVisitor).visit(c)
   px.Extracted()
@@ -180,57 +180,57 @@ let objectProperties ctx (c : OWLClass) =
   |> Seq.map (fun (k, cx) -> (k, firstCharacteristic cx, constraints cx))
   |> Set.ofSeq
 
-let subTypes ctx (c : OWLClass) = 
+let subTypes ctx (c : OWLClass) =
   ctx.Reasoner.getSubClasses(c, true).getFlattened()
   |> iter<OWLClass>
   |> List.map Uri.fromHasUri
 
-let superTypes ctx (c : OWLClass) = 
+let superTypes ctx (c : OWLClass) =
   ctx.Reasoner.getSuperClasses(c, true).getFlattened()
   |> iter<OWLClass>
   |> List.map Uri.fromHasUri
 
-let labels ctx (e : OWLEntity) = 
+let labels ctx (e : OWLEntity) =
   e.getAnnotations (ctx.Ontology)
   |> iter<OWLAnnotation>
   |> List.filter (fun a -> a.getProperty().isLabel())
   |> List.map (fun a -> Literal.String(string (a.getValue())))
 
-let comments ctx (e : OWLEntity) = 
+let comments ctx (e : OWLEntity) =
   e.getAnnotations (ctx.Ontology)
   |> iter<OWLAnnotation>
   |> List.filter (fun a -> a.getProperty().isComment())
   |> List.map (fun a -> Literal.String(string (a.getValue())))
 
-type OntologyManager() = 
+type OntologyManager() =
   member x.manager = OWLManager.createOWLOntologyManager()
-  
-  member x.loadFile (p : string) = 
-    try 
-      Ontology(x.manager.loadOntologyFromOntologyDocument (java.io.File(p))) 
+
+  member x.loadFile (p : string) =
+    try
+      Ontology(x.manager.loadOntologyFromOntologyDocument (java.io.File(p)))
       |> x.reason
-    with :? OWLOntologyAlreadyExistsException as e -> 
+    with :? OWLOntologyAlreadyExistsException as e ->
       Ontology(x.manager.getOntology (e.getDocumentIRI())) |> x.reason
-  
-  member private x.reason o = 
+
+  member private x.reason o =
     match o with
-    | Ontology(o) -> 
+    | Ontology(o) ->
       let reasonerFactory = Cognitum.OwlApi.Net.Pellet.NetReasonerFactoryImpl()
       let config = new SimpleConfiguration()
       let reasoner = reasonerFactory.createReasoner (o, config)
-      reasoner.precomputeInferences 
+      reasoner.precomputeInferences
         ([| InferenceType.CLASS_ASSERTIONS; InferenceType.CLASS_HIERARCHY |])
-      Ontology(reasoner.getRootOntology()), Reasoner reasoner, 
+      Ontology(reasoner.getRootOntology()), Reasoner reasoner,
       Factory(o.getOWLOntologyManager().getOWLDataFactory())
-  
-  member x.schema ctx (iri : string) = 
+
+  member x.schema ctx (iri : string) =
     let cs = (ctx.DataFactory.getOWLClass(IRI.create iri).asOWLClass())
     { Uri = Uri.from (iri)
       Label = labels ctx cs
       Comments = comments ctx cs
       ObjectProperties = objectProperties ctx cs
       DataProperties = Set.empty
-      EquivalentClasses = 
+      EquivalentClasses =
         ctx.Reasoner.getEquivalentClasses(cs).getEntities()
         |> iter<obj>
         |> List.map splitIntersections

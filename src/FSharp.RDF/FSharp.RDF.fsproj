@@ -74,10 +74,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    
+    <Compile Include="ProvidedTypes/Signatures/ProvidedTypes.fsi" />
+    <Compile Include="ProvidedTypes/Code/ProvidedTypes.fs" />
+    <Compile Include="ProvidedTypes/Code/Debug.fs" />
     <Compile Include="Graph.fs" />
     <Compile Include="Ontology.fs" />
     <Compile Include="JsonLd.fs" />
-    <Compile Include="Store.fs" />
     <Compile Include="Sparql.fs" />
     <Compile Include="Schema.fs" />
     <Compile Include="Assertion.fs" />

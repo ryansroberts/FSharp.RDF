@@ -8,11 +8,12 @@ module JsonLD =
     open FSharp.RDF
 
     type Config =
-      | Config of JsonLdOptions
+      | Config of JsonLdOptions 
 
     [<AutoOpen>]
     module config =
-     type Config with
+      type Config with
+       static member def = Config(JsonLdOptions())
        static member context x (Config c) = c.SetExpandContext x;(Config c)
        static member compactArrays x (Config c) = c.SetCompactArrays x;(Config c)
        static member useRDFType x (Config c) = c.SetUseRdfType x;(Config c)

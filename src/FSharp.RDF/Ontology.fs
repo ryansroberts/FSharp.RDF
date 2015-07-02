@@ -14,7 +14,6 @@ open uk.ac.manchester.cs.owl.owlapi
 open org.semanticweb.owlapi.apibinding
 open org.semanticweb.owlapi.model
 open org.semanticweb.owlapi.reasoner
-open Microsoft.FSharp.Linq.RuntimeHelpers
 
 type Constraint =
   | SomeOf of Set<Uri>
@@ -236,3 +235,39 @@ let comments ctx (e : OWLEntity) =
   |> List.filter (fun a -> a.getProperty().isComment())
   |> List.map (fun a -> Literal.String(string (a.getValue())))
 
+[<AutoOpen>]
+module manager =
+  let manager = lazy OWLManager.createOWLOntologyManager()
+
+  let private reason (Ontology o) =
+    let reasonerFactory = Cognitum.OwlApi.Net.Pellet.NetReasonerFactoryImpl()
+    let config = new SimpleConfiguration()
+    let reasoner = reasonerFactory.createReasoner (o, config)
+    reasoner.precomputeInferences ([| InferenceType.CLASS_ASSERTIONS; InferenceType.CLASS_HIERARCHY |])
+    Ontology(reasoner.getRootOntology()), Reasoner reasoner,
+      Factory(o.getOWLOntologyManager().getOWLDataFactory())
+
+  type Ontology with
+    static member loadFile (p : string) =
+        try
+          Ontology(manager.Value.loadOntologyFromOntologyDocument (java.io.File(p)))
+          |> reason
+        with :? OWLOntologyAlreadyExistsException as e ->
+          Ontology(manager.Value.getOntology (e.getDocumentIRI())) |> reason
+
+
+    static member schema ctx (iri : string) =
+        let cs = (ctx.DataFactory.getOWLClass(IRI.create iri).asOWLClass())
+        { Uri = Uri.from (iri)
+          Label = labels ctx cs
+          Comments = comments ctx cs
+          ObjectProperties = objectProperties ctx cs
+          DataProperties = Set.empty
+          EquivalentClasses =
+            ctx.Reasoner.getEquivalentClasses(cs).getEntities()
+            |> iter<obj>
+            |> List.map splitIntersections
+            |> List.concat
+            |> Set.ofList
+          Supertypes = superTypes ctx cs |> Set.ofList
+          Subtypes = subTypes ctx cs |> Set.ofList }

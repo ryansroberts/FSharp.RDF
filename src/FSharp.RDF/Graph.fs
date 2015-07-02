@@ -140,12 +140,8 @@ type Graph =
 
 
 module prefixes =
-  let prov = "http://www.w3.org/ns/prov#"
   let rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
   let owl = "http://www.w3.org/2002/07/owl#"
-  let cnt = "http://www.w3.org/2011/content#"
-  let compilation = "http://nice.org.uk/ns/compilation#"
-  let git2prov = "http://nice.org.uk/ns/prov/"
 module wellknown =
   open prefixes
   let rdftype = rdf + "type" |> Uri.from
@@ -201,14 +197,18 @@ module graph =
                 (fun (p, ns) -> g.NamespaceMap.AddNamespace(p, Uri.toSys ns))
 
       static member defaultPrefixes baseUri xp g =
-        Graph.addPrefixes baseUri ([("prov", Uri.from prov)
-                                    ("rdf", Uri.from rdf)
-                                    ("owl", Uri.from owl)
-                                    ("git2prov", Uri.from git2prov)
-                                    ("compilation", Uri.from compilation)
-                                    ("cnt", Uri.from cnt) ] @ xp) g
+        Graph.addPrefixes baseUri ([("rdf", Uri.from rdf)
+                                    ("owl", Uri.from owl)] @ xp) g
 
       static member diff (Graph g) (Graph g') = g.Difference g'
+
+      static member print (Graph g) =
+        let s = System.Text.StringBuilder()
+        let w = new VDS.RDF.Writing.CompressingTurtleWriter()
+        use sw = new System.IO.StringWriter(s)
+        w.Save(g, sw)
+        s.ToString()
+
 
       static member merge (Graph g) (Graph g') = g.Merge(g');Graph g
 

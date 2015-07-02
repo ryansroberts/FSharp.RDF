@@ -6,7 +6,6 @@ module Assertion =
   open VDS.RDF.Writing.Formatting
   open FSharpx
   open FSharp.RDF
-  open Store
 
   module Assert =
     let toVDSNode g n : INode =
