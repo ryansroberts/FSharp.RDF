@@ -64,7 +64,7 @@ module Assertion =
     let datetime d = Node.Literal(Literal.DateTimeOffset d)
 
   let uri u = (Uri.Sys(System.Uri u))
-  let (!) = uri
+  let (!!) = uri
   let inline (^^) t f = f t
 
   module rdf =
