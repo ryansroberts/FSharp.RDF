@@ -19,5 +19,21 @@
   <files>
     <file src="..\bin\FSharp.RDF.dll" target="lib/net40" />
     <file src="..\bin\FSharp.RDF.pdb" target="lib/net40" />
+    <file src="..\bin\owlapi.dll" target="lib/net40" />
+    <file src="..\bin\owlapi.pdb" target="lib/net40" />
+    <file src="..\bin\pellet.dll" target="lib/net40" />
+    <file src="..\bin\pellet.pdb" target="lib/net40" />
+    <file src="..\bin\IKVM.Runtime.dll" target="lib/net40" />
+    <file src="..\bin\IKVM.Runtime.pdb" target="lib/net40" />
+    <file src="..\bin\IKVM.OpenJDK.Core.dll" target="lib/net40" />
+    <file src="..\bin\IKVM.OpenJDK.Core.pdb" target="lib/net40" />
+    <file src="..\bin\IKVM.OpenJDK.Naming.dll" target="lib/net40" />
+    <file src="..\bin\IKVM.OpenJDK.Naming.pdb" target="lib/net40" />
+    <file src="..\bin\IKVM.OpenJDK.Charsets.dll" target="lib/net40" />
+    <file src="..\bin\IKVM.OpenJDK.Charsets.pdb" target="lib/net40" />
+    <file src="..\bin\IKVM.OpenJDK.XML.Parse.dll" target="lib/net40" />
+    <file src="..\bin\IKVM.OpenJDK.XML.Parse.pdb" target="lib/net40" />
+    <file src="..\bin\IKVM.OpenJDK.XML.API.dll" target="lib/net40" />
+    <file src="..\bin\IKVM.OpenJDK.XML.API.pdb" target="lib/net40" />
   </files>
 </package>

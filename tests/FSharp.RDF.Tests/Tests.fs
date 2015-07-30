@@ -97,21 +97,21 @@ let ``Assert a resource``() =
   let s = ""
   let sb = new System.Text.StringBuilder(s)
 
-  let og = Graph.empty (!"http://sometest/ns#") [("base",!"http://sometest/ns#")]
+  let og = Graph.empty (!!"http://sometest/ns#") [("base",!!"http://sometest/ns#")]
   let r =
-    resource !"base:id"
-      [ a !"base:Type"
-        objectProperty !"base:someObjectProperty" !"base:SomeOtherId"
-        objectProperty !"base:someNonQname" !"http://google.com/stuff"
-        dataProperty !"base:someDataProperty" ("value"^^xsd.string)
+    resource !!"base:id"
+      [ a !!"base:Type"
+        objectProperty !!"base:someObjectProperty" !!"base:SomeOtherId"
+        objectProperty !!"base:someNonQname" !!"http://google.com/stuff"
+        dataProperty !!"base:someDataProperty" ("value"^^xsd.string)
 
-        blank !"base:someBlankProperty"
-          [ a !"base:BankType"
-            dataProperty !"base:someDataProperty" ("value2"^^xsd.string) ]
+        blank !!"base:someBlankProperty"
+          [ a !!"base:BankType"
+            dataProperty !!"base:someDataProperty" ("value2"^^xsd.string) ]
 
-        one !"base:someOtherObjectProperty" !"base:id2"
-          [ a !"base:LinkedType"
-            dataProperty !"base:someDataProperty" ("value3"^^xsd.string) ]]
+        one !!"base:someOtherObjectProperty" !!"base:id2"
+          [ a !!"base:LinkedType"
+            dataProperty !!"base:someDataProperty" ("value3"^^xsd.string) ]]
   [r]
   |> Assert.graph og
   |> Graph.writeTtl (toString sb)
@@ -149,17 +149,17 @@ let ``Streaming resources`` () =
   let s = ""
   let sb = new System.Text.StringBuilder(s)
 
-  let g = Graph.empty (!"http://sometest/ns#") [("base",!"http://sometest/ns#")]
+  let g = Graph.empty (!!"http://sometest/ns#") [("base",!!"http://sometest/ns#")]
   let r =
-    resource !"http://an.id" [
-      a !"base:type"
-      blank !"base:someBlankProperty"
-          [ a !"base:BankType"
-            dataProperty !"base:someDataProperty" ("value1"^^xsd.string) ]
+    resource !!"http://an.id" [
+      a !!"base:type"
+      blank !!"base:someBlankProperty"
+          [ a !!"base:BankType"
+            dataProperty !!"base:someDataProperty" ("value1"^^xsd.string) ]
 
-      blank !"base:someBlankProperty"
-          [ a !"base:BankType"
-            dataProperty !"base:someDataProperty" ("value2"^^xsd.string) ]
+      blank !!"base:someBlankProperty"
+          [ a !!"base:BankType"
+            dataProperty !!"base:someDataProperty" ("value2"^^xsd.string) ]
       ]
   [r]
   |> Assert.triples g
@@ -175,17 +175,17 @@ let ``Convert asserted resource to ld graph`` () =
   let s = ""
   let sb = new System.Text.StringBuilder(s)
 
-  let g = Graph.empty (!"http://sometest/ns#") [("base",!"http://sometest/ns#")]
+  let g = Graph.empty (!!"http://sometest/ns#") [("base",!!"http://sometest/ns#")]
   let r =
-      resource !"http://ld.nice/resource#231231" [
-        a !"base:type"
-        blank !"base:someBlankProperty"
-            [ a !"base:BankType"
-              dataProperty !"base:someDataProperty" ("value1"^^xsd.string) ]
+      resource !!"http://ld.nice/resource#231231" [
+        a !!"base:type"
+        blank !!"base:someBlankProperty"
+            [ a !!"base:BankType"
+              dataProperty !!"base:someDataProperty" ("value1"^^xsd.string) ]
 
-        blank !"base:someBlankProperty"
-            [ a !"base:BankType"
-              dataProperty !"base:someDataProperty" ("value2"^^xsd.string) ]
+        blank !!"base:someBlankProperty"
+            [ a !!"base:BankType"
+              dataProperty !!"base:someDataProperty" ("value2"^^xsd.string) ]
         ]
   let opts = JsonLdOptions()
   opts.SetCompactArrays(true)

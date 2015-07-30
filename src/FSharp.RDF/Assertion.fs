@@ -79,12 +79,12 @@ module Assertion =
   module owl =
     let individual s xt xst =
       R(S s,
-        [ yield rdf.a !"owl:NamedIndividual"
+        [ yield rdf.a !!"owl:NamedIndividual"
           for t in xt -> rdf.a t ]
         @ xst)
 
     let cls s xt xst =
       R(S s,
-        [ yield rdf.a !"owl:Class"
+        [ yield rdf.a !!"owl:Class"
           for t in xt -> rdf.a t ]
         @ xst)
