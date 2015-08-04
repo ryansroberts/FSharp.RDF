@@ -37,9 +37,13 @@ let pr2 = Uri.from "http://testing.stuff/ns#pr2"
 let pr3 = Uri.from "http://testing.stuff/ns#pr3"
 let pr4 = Uri.from "http://testing.stuff/ns#pr4"
 
+let qn1 = Uri.from "testing:pr1"
+
 open resource
 
 let g = Graph.loadTtl (fromString functionalProperties)
+        |> Graph.addPrefixes (Uri.from "http://base/") [("testing",Uri.from "http://testing.stuff/ns#")]
+
 let r1 = (Resource.fromSubject item1 g) |> Seq.head
 let r3 = (Resource.fromSubject item3 g) |> Seq.head
 
@@ -60,6 +64,14 @@ let ``Pattern match type``() =
   test <@ true = match r1 with
                  | HasType type1 _ -> true
                  | _ -> false @>
+
+[<Fact>]
+let ``Match using qname`` () =
+  test <@ true = match r1 with
+    | ObjectProperty qn1 [item2] -> true
+    | _ -> false @>
+
+
 
 [<Fact>]
 let ``Fail to pattern match type``() =

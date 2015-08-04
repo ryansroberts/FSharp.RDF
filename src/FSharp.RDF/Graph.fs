@@ -13,25 +13,21 @@ open VDS.RDF.Ontology
 [<CustomEquality;CustomComparison>]
 type Uri =
   | Sys of System.Uri
-  | VDS of System.Uri * (System.Uri -> bool)
 
   override x.ToString() =
     match x with
     | Sys uri -> string uri
-    | VDS (uri,_) -> string uri
 
   override u.Equals(u') =
     match u' with
     | :? Uri as u' ->
       match u, u' with
-      | VDS (u,_),VDS (_,u') -> string u = string u'
       | Sys u, Sys u' -> string u = string u'
-      | Sys u, VDS (_,f) -> f u
-      | VDS (_,f),Sys u -> f u
     | _ -> false
 
-  override u.GetHashCode () =
-    (Uri.toSys u).GetHashCode()
+  override x.GetHashCode () =
+    match x with
+      | Sys u -> u.GetHashCode()
 
   interface IComparable<Uri> with
         member u.CompareTo (u') = (string u).CompareTo(string u')
@@ -40,13 +36,11 @@ type Uri =
             match obj with
             | :? Uri as u' -> (u:> IComparable<_>).CompareTo u'
             | _ -> invalidArg "obj" "not a Uri"
-  interface IEquatable<Uri> with
-        member u.Equals (u') = string u = string u'
+  interface IEquatable<Uri> with member u.Equals (u') = string u = string u'
 
   static member from s = Uri.Sys(System.Uri(s))
   static member from s = Uri.Sys s
-  static member from (n:IUriNode) = (Uri.VDS (n.Uri,fun u -> (n.Equals(n.Graph.CreateUriNode u))))
-  static member toSys = function | Sys u -> u | VDS (u,_) -> u
+  static member toSys (Uri.Sys u) = u
 
 [<CustomEquality; NoComparison>]
 type Node =
@@ -191,11 +185,12 @@ module graph =
         Graph g
 
       static member addPrefixes (baseUri) xp (Graph g) =
-        g.BaseUri <- (Uri.toSys baseUri)
+        g.BaseUri <- Uri.toSys baseUri
         ("base",baseUri)::xp
         |> List.iter
-                (fun (p, ns) -> g.NamespaceMap.AddNamespace(p, Uri.toSys ns))
-        g
+                (fun (p, (Uri.Sys ns)) -> g.NamespaceMap.AddNamespace(p, ns))
+        Graph g
+
       static member defaultPrefixes baseUri xp g =
         Graph.addPrefixes baseUri ([("rdf", Uri.from rdf)
                                     ("owl", Uri.from owl)] @ xp) g
@@ -214,7 +209,6 @@ module graph =
       static member empty baseUri xp =
         let g = (Graph ( new VDS.RDF.Graph() ))
         Graph.defaultPrefixes baseUri xp g
-        g
 
       static member threadSafe (Graph g) =
         let g' = new ThreadSafeGraph(g.Triples)
