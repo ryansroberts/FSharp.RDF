@@ -195,11 +195,10 @@ module graph =
         ("base",baseUri)::xp
         |> List.iter
                 (fun (p, ns) -> g.NamespaceMap.AddNamespace(p, Uri.toSys ns))
-
+        g
       static member defaultPrefixes baseUri xp g =
         Graph.addPrefixes baseUri ([("rdf", Uri.from rdf)
                                     ("owl", Uri.from owl)] @ xp) g
-
       static member diff (Graph g) (Graph g') = g.Difference g'
 
       static member print (Graph g) =
