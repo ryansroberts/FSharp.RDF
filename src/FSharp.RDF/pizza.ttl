@@ -1,0 +1,164 @@
+# baseURI: http://sissvoc.info/def/pizza/
+# imports: http://www.w3.org/2004/02/skos/core
+
+@prefix :        <http://sissvoc.info/def/pizza/> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix p:       <http://sissvoc.info/def/pizza/> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+p:    rdf:type owl:Ontology ;
+      owl:imports <http://www.w3.org/2004/02/skos/core> ;
+      owl:versionInfo "Created with TopBraid Composer"^^xsd:string .
+
+p:AussiePizza
+      rdf:type skos:Concept ;
+      rdfs:label "Aussie pizza"^^xsd:string ;
+      skos:broader p:Pizza ;
+      skos:prefLabel "Aussie pizza"^^xsd:string ;
+      skos:related p:Ham , p:Egg , p:TomatoSauce .
+
+p:Basil
+      rdf:type skos:Concept ;
+      rdfs:label "Basil"^^xsd:string ;
+      skos:broader p:Herb ;
+      skos:prefLabel "Basil"^^xsd:string .
+
+p:BlueCheese
+      rdf:type skos:Concept ;
+      rdfs:label "Blue cheese"^^xsd:string ;
+      skos:prefLabel "Blue cheese"^^xsd:string .
+
+p:CheddarCheese
+      rdf:type skos:Concept ;
+      rdfs:label "Cheddar cheese"^^xsd:string ;
+      skos:prefLabel "Cheddar cheese"^^xsd:string .
+
+p:Cheese
+      rdf:type skos:Concept ;
+      rdfs:label "Cheese"^^xsd:string ;
+      skos:broader p:IngredientConcept ;
+      skos:narrower p:CheddarCheese , p:BlueCheese , p:MozzarellaCheese ;
+      skos:prefLabel "Cheese"^^xsd:string .
+
+p:Egg
+      rdf:type skos:Concept ;
+      rdfs:label "Egg"^^xsd:string ;
+      skos:prefLabel "Egg"^^xsd:string .
+
+p:GarlicSauce
+      rdf:type skos:Concept ;
+      rdfs:label "Garlic sauce"^^xsd:string ;
+      skos:prefLabel "Garlic sauce"^^xsd:string .
+
+p:Ham
+      rdf:type skos:Concept ;
+      rdfs:label "Ham"^^xsd:string ;
+      skos:broader p:IngredientConcept ;
+      skos:prefLabel "Ham"^^xsd:string .
+
+p:Herb
+      rdf:type skos:Concept ;
+      rdfs:label "Herb"^^xsd:string ;
+      skos:broader p:IngredientConcept ;
+      skos:prefLabel "Herb"^^xsd:string .
+
+p:IngredientConcept
+      rdf:type skos:Concept ;
+      rdfs:label "Ingredient concept"^^xsd:string ;
+      skos:narrower p:Herb , p:Sauce , p:SeafoodIngredient , p:Vegetable , p:MeatIngredient , p:Egg ;
+      skos:prefLabel "Ingredient concept"^^xsd:string .
+
+p:MargheritaPizza
+      rdf:type skos:Concept ;
+      rdfs:label "Margherita pizza"^^xsd:string ;
+      skos:broader p:Pizza ;
+      skos:prefLabel "Margherita pizza"^^xsd:string ;
+      skos:related p:Basil , p:MozzarellaCheese , p:TomatoSauce .
+
+p:MarinaraPizza
+      rdf:type skos:Concept ;
+      rdfs:label "Marinara pizza"^^xsd:string ;
+      skos:broader p:Pizza ;
+      skos:prefLabel "Marinara pizza"^^xsd:string ;
+      skos:related p:SeafoodIngredient , p:Herb , p:GarlicSauce .
+
+p:MeatIngredient
+      rdf:type skos:Concept ;
+      rdfs:label "Meat ingredient"^^xsd:string ;
+      skos:broader p:IngredientConcept ;
+      skos:narrower p:Ham ;
+      skos:prefLabel "Meat ingredient"^^xsd:string .
+
+p:MozzarellaCheese
+      rdf:type skos:Concept ;
+      rdfs:label "Mozzarella cheese"^^xsd:string ;
+      skos:prefLabel "Mozzarella cheese"^^xsd:string .
+
+p:Mushroom
+      rdf:type skos:Concept ;
+      rdfs:label "Mushroom"^^xsd:string ;
+      skos:prefLabel "Mushroom"^^xsd:string .
+
+p:MushroomPizza
+      rdf:type skos:Concept ;
+      rdfs:label "Mushroom pizza"^^xsd:string ;
+      skos:broader p:Pizza ;
+      skos:prefLabel "Mushroom pizza"^^xsd:string ;
+      skos:related p:TomatoSauce , p:Mushroom .
+
+p:NonVegetarianPizza
+      rdf:type skos:Collection ;
+      rdfs:label "Non vegetarian pizza"^^xsd:string ;
+      skos:member p:MarinaraPizza , p:AussiePizza ;
+      skos:prefLabel "Non vegetarian pizza"^^xsd:string .
+
+p:Pizza
+      rdf:type skos:Concept ;
+      rdfs:label "Pizza"^^xsd:string ;
+      skos:narrowMatch p:MushroomPizza , p:AussiePizza , p:MargheritaPizza , p:MarinaraPizza ;
+      skos:prefLabel "Pizza"^^xsd:string ;
+      skos:topConceptOf skos:PizzaConceptScheme .
+
+p:Sauce
+      rdf:type skos:Concept ;
+      rdfs:label "Sauce"^^xsd:string ;
+      skos:broader p:IngredientConcept ;
+      skos:narrower p:GarlicSauce , p:TomatoSauce ;
+      skos:prefLabel "Sauce"^^xsd:string .
+
+p:SeafoodIngredient
+      rdf:type skos:Concept ;
+      rdfs:label "Seafood ingredient"^^xsd:string ;
+      skos:broader p:IngredientConcept ;
+      skos:prefLabel "Seafood ingredient"^^xsd:string .
+
+p:TomatoSauce
+      rdf:type skos:Concept ;
+      rdfs:label "Tomato sauce"^^xsd:string ;
+      skos:prefLabel "Tomato sauce"^^xsd:string .
+
+p:Vegetable
+      rdf:type skos:Concept ;
+      rdfs:label "Vegetable"^^xsd:string ;
+      skos:broader p:IngredientConcept ;
+      skos:narrower p:Mushroom ;
+      skos:prefLabel "Vegetable"^^xsd:string .
+
+p:VegetarianPizzaCollection
+      rdf:type skos:Collection ;
+      skos:member p:MushroomPizza , p:MargheritaPizza .
+
+skos:IngredientScheme
+      rdf:type skos:ConceptScheme ;
+      rdfs:label "Ingredient scheme"^^xsd:string ;
+      skos:hasTopConcept p:IngredientConcept ;
+      skos:prefLabel "Ingredient scheme"^^xsd:string .
+
+skos:PizzaConceptScheme
+      rdf:type skos:ConceptScheme ;
+      rdfs:label "Pizza concept scheme"^^xsd:string ;
+      skos:hasTopConcept p:Pizza ;
+      skos:prefLabel "Pizza concept scheme"^^xsd:string .

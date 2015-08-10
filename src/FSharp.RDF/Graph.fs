@@ -10,7 +10,7 @@ open System
 open System.Text.RegularExpressions
 open VDS.RDF.Ontology
 
-[<CustomEquality;CustomComparison>]
+[<CustomEquality; CustomComparison>]
 type Uri =
   | Sys of System.Uri
 
@@ -25,18 +25,21 @@ type Uri =
       | Sys u, Sys u' -> string u = string u'
     | _ -> false
 
-  override x.GetHashCode () =
+  override x.GetHashCode() =
     match x with
-      | Sys u -> u.GetHashCode()
+    | Sys u -> u.GetHashCode()
 
   interface IComparable<Uri> with
-        member u.CompareTo (u') = (string u).CompareTo(string u')
+    member u.CompareTo(u') = (string u).CompareTo(string u')
+
   interface IComparable with
-        member u.CompareTo obj =
-            match obj with
-            | :? Uri as u' -> (u:> IComparable<_>).CompareTo u'
-            | _ -> invalidArg "obj" "not a Uri"
-  interface IEquatable<Uri> with member u.Equals (u') = string u = string u'
+    member u.CompareTo obj =
+      match obj with
+      | :? Uri as u' -> (u :> IComparable<_>).CompareTo u'
+      | _ -> invalidArg "obj" "not a Uri"
+
+  interface IEquatable<Uri> with
+    member u.Equals(u') = string u = string u'
 
   static member from s = Uri.Sys(System.Uri(s))
   static member from s = Uri.Sys s
@@ -107,6 +110,7 @@ and Object =
     | n -> O(n, lazy [])
 
 and Statement = Predicate * Object
+
 and Triple = Subject * Predicate * Object
 
 and Resource =
@@ -124,106 +128,116 @@ and Resource =
 
 and Blank =
   | Blank of Lazy<Statement list>
-  with override x.ToString() =
+  override x.ToString() =
     match x with
     | Blank xs -> sprintf "%A" (xs.Value)
-
 
 type Graph =
   | Graph of IGraph
 
-
 module prefixes =
   let rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
   let owl = "http://www.w3.org/2002/07/owl#"
+
 module wellknown =
   open prefixes
-  let rdftype = rdf + "type" |> Uri.from
 
+  let rdftype = rdf + "type" |> Uri.from
 
 [<AutoOpen>]
 module graph =
+  let hasSubject (S s) (P p, O(o, xs)) = (S s, P p, O(o, xs))
+  let hasPredicate (P p) (O(o, xs)) = (P p, O(o, xs))
 
-   let hasSubject (S s) (P p, O (o,xs)) = (S s,P p, O (o,xs))
-   let hasPredicate (P p) (O (o,xs)) = (P p, O (o,xs))
-   open prefixes
-   let toString (s : System.Text.StringBuilder) = new System.IO.StringWriter(s) :> System.IO.TextWriter
-   let toFile (p) = new System.IO.StreamWriter ( System.IO.File.OpenWrite p  ) :> System.IO.TextWriter
-   let toStream (s:System.IO.Stream) = new System.IO.StreamWriter (s) :> System.IO.TextWriter
-   let fromString (s:string) = new System.IO.StringReader(s) :> System.IO.TextReader
-   let fromStream (s:System.IO.Stream) = new System.IO.StreamReader(s) :> System.IO.TextReader
+  open prefixes
 
-   module private parse =
-      let ttl () = new TurtleParser() :> IRdfReader
-   module private formatWrite =
-      let ttl () = CompressingTurtleWriter() :> IRdfWriter
-   module private formatStream =
-      let ttl (Graph g) = TurtleFormatter() :> ITripleFormatter
+  let toString (s : System.Text.StringBuilder) =
+    new System.IO.StringWriter(s) :> System.IO.TextWriter
+  let toFile (p) =
+    new System.IO.StreamWriter(System.IO.File.OpenWrite p) :> System.IO.TextWriter
+  let toStream (s : System.IO.Stream) =
+    new System.IO.StreamWriter(s) :> System.IO.TextWriter
+  let fromString (s : string) =
+    new System.IO.StringReader(s) :> System.IO.TextReader
+  let fromStream (s : System.IO.Stream) =
+    new System.IO.StreamReader(s) :> System.IO.TextReader
 
-   let private load (f:IRdfReader) (sr : System.IO.TextReader) =
-        let g = new VDS.RDF.Graph()
-        f.Load(g, sr)
-        Graph g
+  module private parse =
+    let ttl() = new TurtleParser() :> IRdfReader
 
-   let private write (f:IRdfWriter) (tw : System.IO.TextWriter) (Graph g) =
-        f.Save(g, tw)
+  module private formatWrite =
+    let ttl() = CompressingTurtleWriter() :> IRdfWriter
 
-   let private stream (f:ITripleFormatter) (tw : System.IO.TextWriter) tx = seq {
-        for t in tx do
-          f.Format t |> tw.WriteLine
-          yield t
-      }
+  module private formatStream =
+    let ttl (Graph g) = TurtleFormatter() :> ITripleFormatter
 
-   type Graph with
+  let private load (f : IRdfReader) (sr : System.IO.TextReader) =
+    let g = new VDS.RDF.Graph()
+    f.Load(g, sr)
+    Graph g
 
+  let private write (f : IRdfWriter) (tw : System.IO.TextWriter) (Graph g) =
+    f.Save(g, tw)
 
-      static member loadFrom (s : string) =
-        let g = new VDS.RDF.Graph()
-        match s.StartsWith("http") with
-        | true -> g.LoadFromUri(System.Uri s)
-        | _ -> g.LoadFromFile s
-        Graph g
+  let private stream (f : ITripleFormatter) (tw : System.IO.TextWriter) tx =
+    seq {
+      for t in tx do
+        f.Format t |> tw.WriteLine
+        yield t
+    }
 
-      static member addPrefixes (baseUri) xp (Graph g) =
-        g.BaseUri <- Uri.toSys baseUri
-        ("base",baseUri)::xp
-        |> List.iter
-                (fun (p, (Uri.Sys ns)) -> g.NamespaceMap.AddNamespace(p, ns))
-        Graph g
+  type Graph with
 
-      static member defaultPrefixes baseUri xp g =
-        Graph.addPrefixes baseUri ([("rdf", Uri.from rdf)
-                                    ("owl", Uri.from owl)] @ xp) g
-      static member diff (Graph g) (Graph g') = g.Difference g'
+    static member loadFrom (s : string) =
+      let g = new VDS.RDF.Graph()
+      match s.StartsWith("http") with
+      | true -> g.LoadFromUri(System.Uri s)
+      | _ -> g.LoadFromFile s
+      Graph g
 
-      static member print (Graph g) =
-        let s = System.Text.StringBuilder()
-        let w = new VDS.RDF.Writing.CompressingTurtleWriter()
-        use sw = new System.IO.StringWriter(s)
-        w.Save(g, sw)
-        s.ToString()
+    static member addPrefixes (baseUri) xp (Graph g) =
+      g.BaseUri <- Uri.toSys baseUri
+      ("base", baseUri) :: xp
+      |> List.iter (fun (p, (Uri.Sys ns)) -> g.NamespaceMap.AddNamespace(p, ns))
+      Graph g
 
+    static member defaultPrefixes baseUri xp g =
+      Graph.addPrefixes baseUri ([ ("rdf", Uri.from rdf)
+                                   ("owl", Uri.from owl) ]
+                                 @ xp) g
 
-      static member merge (Graph g) (Graph g') = g.Merge(g');Graph g
+    static member diff (Graph g) (Graph g') = g.Difference g'
 
-      static member empty baseUri xp =
-        let g = (Graph ( new VDS.RDF.Graph() ))
-        Graph.defaultPrefixes baseUri xp g
+    static member print (Graph g) =
+      let s = System.Text.StringBuilder()
+      let w = new VDS.RDF.Writing.CompressingTurtleWriter()
+      use sw = new System.IO.StringWriter(s)
+      w.Save(g, sw)
+      s.ToString()
 
-      static member threadSafe (Graph g) =
-        let g' = new ThreadSafeGraph(g.Triples)
-        g'.BaseUri <- g.BaseUri
-        for p in g.NamespaceMap.Prefixes do
-          g'.NamespaceMap.AddNamespace(p,g.NamespaceMap.GetNamespaceUri p)
-        Graph g'
+    static member merge (Graph g) (Graph g') =
+      g.Merge(g')
+      Graph g
 
-      static member streamTtl g = stream (formatStream.ttl g)
-      static member writeTtl = write (formatWrite.ttl ())
-      static member loadTtl = load (parse.ttl ())
+    static member empty baseUri xp =
+      let g = (Graph(new VDS.RDF.Graph()))
+      Graph.defaultPrefixes baseUri xp g
+
+    static member threadSafe (Graph g) =
+      let g' = new ThreadSafeGraph(g.Triples)
+      g'.BaseUri <- g.BaseUri
+      for p in g.NamespaceMap.Prefixes do
+        g'.NamespaceMap.AddNamespace(p, g.NamespaceMap.GetNamespaceUri p)
+      Graph g'
+
+    static member streamTtl g = stream (formatStream.ttl g)
+    static member writeTtl = write (formatWrite.ttl())
+    static member loadTtl = load (parse.ttl())
 
 module triple =
   let uriNode u (Graph g) = g.CreateUriNode(Uri.toSys u)
-  let private rdfType = Uri.from "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+  let private rdfType =
+    Uri.from "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
   let bySubject u (Graph g) = g.GetTriplesWithSubject(uriNode u (Graph g))
   let byObject u (Graph g) = g.GetTriplesWithObject(uriNode u (Graph g))
   let byPredicate u (Graph g) = g.GetTriplesWithPredicate(uriNode u (Graph g))
@@ -233,34 +247,38 @@ module triple =
     g.GetTriplesWithSubjectObject(uriNode p (Graph g), uriNode o (Graph g))
   let bySubjectPredicate p o (Graph g) =
     g.GetTriplesWithSubjectPredicate(uriNode p (Graph g), uriNode o (Graph g))
-  let byType o (Graph g) = seq {
-    for s in g.GetTriplesWithPredicateObject(uriNode rdfType (Graph g), uriNode o (Graph g)) do
-      yield! g.GetTriplesWithSubject(s.Subject);
+
+  let byType o (Graph g) =
+    seq {
+      for s in g.GetTriplesWithPredicateObject
+                 (uriNode rdfType (Graph g), uriNode o (Graph g)) do
+        yield! g.GetTriplesWithSubject(s.Subject)
     }
 
   let fromSingle f x g = f x g |> Resource.from
   let fromDouble f x y g = f x y g |> Resource.from
 
-
 [<AutoOpen>]
 module resource =
   open triple
   open prefixes
+
   let mapObject f (O(o, _)) = f o
   let mapO f = List.map (mapObject f)
 
   type Resource with
-    static member fromSubject  = fromSingle bySubject
-    static member fromPredicate  = fromSingle byPredicate
-    static member fromObject  = fromSingle byObject
+    static member fromSubject = fromSingle bySubject
+    static member fromPredicate = fromSingle byPredicate
+    static member fromObject = fromSingle byObject
     static member fromPredicateObject = fromDouble byPredicateObject
-    static member fromSubjectObject  = fromDouble bySubjectObject
-    static member fromSubjectPredicate  = fromDouble bySubjectPredicate
+    static member fromSubjectObject = fromDouble bySubjectObject
+    static member fromSubjectPredicate = fromDouble bySubjectPredicate
     static member fromType = fromSingle byType
     static member id (R(S s, _)) = s
-    static member asTriples (R(s,px) ) = seq {
-      for (p, o) in px -> (s, p, o)
-    }
+    static member asTriples (R(s, px)) =
+      seq {
+        for (p, o) in px -> (s, p, o)
+      }
 
   let traverse xo =
     [ for (O(_, next)) in xo do
@@ -283,45 +301,55 @@ module resource =
     |> Seq.toList
     |> noneIfEmpty
 
-  let (|ObjectProperty|_|) p = function
+  let (|ObjectProperty|_|) p =
+    function
     | Property p x ->
-      x |> List.map (function
-                   | O(Uri u,_) -> Some u
-                   | _ -> None)
+      x
+      |> List.map (function
+           | O(Uri u, _) -> Some u
+           | _ -> None)
       |> List.filter Option.isSome
       |> List.map Option.get
       |> noneIfEmpty
     | _ -> None
 
-  let private listOfOne = function
-    | x::_ -> Some x
+  let private listOfOne =
+    function
+    | x :: _ -> Some x
     | _ -> None
 
-  let (|FunctionalProperty|_|) p = function
+  let (|FunctionalProperty|_|) p =
+    function
     | Property p x -> listOfOne x
     | _ -> None
 
-  let (|FunctionalObjectProperty|_|) p = function
+  let (|FunctionalObjectProperty|_|) p =
+    function
     | ObjectProperty p x -> listOfOne x
     | _ -> None
 
-  let (|DataProperty|_|) p f = function
+  let (|DataProperty|_|) p f =
+    function
     | Property p xo -> Some(mapO f xo)
     | _ -> None
 
-  let (|FunctionalDataProperty|_|) p f = function
+  let (|FunctionalDataProperty|_|) p f =
+    function
     | FunctionalProperty p (O(o, _)) -> Some(f o)
     | _ -> None
 
-  let (|Traverse|_|) p = function
+  let (|Traverse|_|) p =
+    function
     | Property p xo -> traverse xo |> noneIfEmpty
     | _ -> None
 
-  let (|TraverseFunctional|_|) p = function
+  let (|TraverseFunctional|_|) p =
+    function
     | Traverse p xo -> listOfOne xo
     | _ -> None
 
-  let (|HasType|_|) t = function
+  let (|HasType|_|) t =
+    function
     | ObjectProperty wellknown.rdftype xs -> List.filter ((=) t) xs |> listOfOne
     | _ -> None
 

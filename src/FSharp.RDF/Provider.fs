@@ -1,41 +1,40 @@
 namespace FSharp.RDF
 
+open System
 open ProviderImplementation.ProvidedTypes
 open Microsoft.FSharp.Core.CompilerServices
 open System.Reflection
 open VDS.RDF
-open System
 open System.IO
-open Ontology
+open FSharp.RDF.Ontology
+open Microsoft.FSharp.Quotations
 
 module private Generator =
   type GenerationContext =
-    {uri : Uri
-     ont : string -> Class }
+    { uri : FSharp.RDF.Uri
+      ont : string -> Class }
 
   type OntologyNode(uri : string) =
     member x.Uri = Uri.from uri
 
-  type Class(uri) =
+  type ClassNode(uri) =
     inherit OntologyNode(uri)
 
-  type Individual(uri) =
+  type IndividualNode(uri) =
     inherit OntologyNode(uri)
 
-  type ObjectProperty(uri) =
+  type ObjectPropertyNode(uri) =
     inherit OntologyNode(uri)
 
-  type DataProperty(uri) =
+  type DataPropertyNode(uri) =
     inherit OntologyNode(uri)
 
-  type Restriction(uri) =
+  type RestrictionNode(uri) =
     inherit OntologyNode(uri)
 
-  let typeName (uri) =
-    let uri = Uri.toSys uri
-    (string uri)
+  let typeName (Uri.Sys uri) = (string uri)
 
-  let className  (cls : OWL.Class) =
+  let className (cls : Class) =
     let uris =
       cls.EquivalentClasses
       |> Seq.map typeName
@@ -43,7 +42,7 @@ module private Generator =
     if uris.Length = 0 then typeName cls.Uri
     else sprintf "%s≡%s" (typeName cls.Uri) (uris |> String.concat "≡")
 
-  let restrictionDocs (Property(uri,_,cx)) =
+  let restrictionDocs (uri, _, cx) =
     let rec restrictionName c =
       [ match c with
         | uri, Constraint.Only rx ->
@@ -68,17 +67,16 @@ module private Generator =
            </summary>
        """ (string uri))
 
-  let objectProperty (ctx : GenerationContext) (p : OWL.ObjectProperty) =
+  let objectProperty (ctx : GenerationContext) (p : ObjectProperty) =
     let (uri, ch, _) = p
 
     let restriction =
-      let restriction =
-        ProvidedTypeDefinition(typeName ctx.ns uri, Some typeof<obj>)
-      restriction.AddXmlDoc <| restrictionDocs ctx.ns p
+      let restriction = ProvidedTypeDefinition(typeName uri, Some typeof<obj>)
+      restriction.AddXmlDoc <| restrictionDocs p
       restriction
 
     let one p =
-      let n = typeName ctx.ns ctx.uri
+      let n = typeName ctx.uri
       let field = ProvidedField("_" + n, restriction)
       field.SetFieldAttributes(FieldAttributes.Private)
       let prop =
@@ -91,7 +89,7 @@ module private Generator =
       let lt =
         typedefof<List<_>>.MakeGenericType([| restriction :> System.Type |])
       restriction.AddMember lt
-      let n = typeName ctx.ns ctx.uri
+      let n = typeName ctx.uri
       let field = ProvidedField("_" + n, lt)
       field.SetFieldAttributes(FieldAttributes.Private)
       let prop =
@@ -106,7 +104,7 @@ module private Generator =
 
   let individualType (ctx : GenerationContext) cs
       (rx : (ProvidedProperty * ProvidedField) list) =
-    let t = ProvidedTypeDefinition("Individual", Some typeof<Individual>)
+    let t = ProvidedTypeDefinition("Individual", Some typeof<IndividualNode>)
 
     let ctor =
       ProvidedConstructor
@@ -114,7 +112,7 @@ module private Generator =
          :: [ for (p, f) in rx -> ProvidedParameter(p.Name, typeof<Uri>) ])
 
     let ctorInfo =
-      typeof<Individual>
+      typeof<IndividualNode>
         .GetConstructor(BindingFlags.Public ||| BindingFlags.Instance, null,
                         [| typeof<string> |], null)
     ctor.BaseConstructorCall <- fun args -> ctorInfo, [ args.[0] ]
@@ -133,13 +131,12 @@ module private Generator =
   let localisedAnnotations ax =
     [ for a in ax do
         match a with
-        | Literal.Literal a -> yield a
-        | Literal.LocalisedLiteral(c, a) -> yield a ]
+        | Literal.String a -> yield a ]
 
   let rec classNode (ctx : GenerationContext) =
     let cs = ctx.ont (string ctx.uri)
     let cls =
-      ProvidedTypeDefinition(typeName ctx.ns ctx.uri, Some typeof<OntologyNode>)
+      ProvidedTypeDefinition(typeName ctx.uri, Some typeof<OntologyNode>)
     cls.AddXmlDoc(sprintf """
         <summary>
             Equivalents: %s
@@ -147,9 +144,9 @@ module private Generator =
         <remarks>
             %s
         </remarks>
-    """ (className ctx.ns cs) (cs.Comments
-                               |> localisedAnnotations
-                               |> Seq.fold (+) ""))
+    """ (className cs) (cs.Comments
+                        |> localisedAnnotations
+                        |> Seq.fold (+) ""))
     let ctor = ProvidedConstructor([])
     let ctorInfo =
       typeof<Class>
@@ -158,12 +155,12 @@ module private Generator =
     ctor.BaseConstructorCall <- fun args -> ctorInfo, [ <@@ (ctx.uri) @@> ]
     ctor.InvokeCode <- fun args -> <@@ () @@>
     cls.AddMember ctor
-    if cs.Subtypes.Any() then
+    if not (Set.isEmpty cs.Subtypes) then
       (fun () ->
       [ for sub in cs.Subtypes do
           yield classNode { ctx with uri = sub } ])
       |> cls.AddMembersDelayed
-    if cs.ObjectProperties.Any() then
+    if not (Set.isEmpty cs.ObjectProperties) then
       let op = ProvidedTypeDefinition("ObjectProperties", Some typeof<obj>)
       cls.AddMember op
       (fun () ->
@@ -171,7 +168,7 @@ module private Generator =
           let (uri, _, _) = p
           yield objectPropertyType { ctx with uri = uri } p ])
       |> op.AddMembersDelayed
-    if cs.DataProperties.Any() then
+    if not (Set.isEmpty cs.DataProperties) then
       let op = ProvidedTypeDefinition("DataProperties", Some typeof<obj>)
       cls.AddMember op
       (fun () ->
@@ -190,69 +187,58 @@ module private Generator =
             yield (prop, field) ]
 
       let (ctor, individualType) = individualType ctx cs rx
-      let individuals =
-        ProvidedMethod
-          ("Individuals", [ ProvidedParameter("store", typeof<Store.store>) ],
-           typedefof<IQueryable<_>>
-             .MakeGenericType([| individualType :> System.Type |]),
-           InvokeCode = (fun args -> <@@ () @@>), IsStaticMethod = true)
       for p, f in rx do
         yield p :> MemberInfo
         yield f :> MemberInfo
-      yield individuals :> MemberInfo
       yield individualType :> MemberInfo ])
     |> cls.AddMembersDelayed
     cls
 
   and objectPropertyType (ctx : GenerationContext) r =
-    ProvidedTypeDefinition(typeName ctx.ns ctx.uri, Some typeof<obj>)
+    ProvidedTypeDefinition(typeName ctx.uri, Some typeof<obj>)
 
   and dataPropertyType (ctx : GenerationContext) r =
-    ProvidedTypeDefinition(typeName ctx.ns ctx.uri, Some typeof<obj>)
+    ProvidedTypeDefinition(typeName ctx.uri, Some typeof<obj>)
 
-  let root (t : ProvidedTypeDefinition) ns root ont =
+  let root (t : ProvidedTypeDefinition) root ont =
     let cls =
-      classNode { ns = ns
-                  uri = root
+      classNode { uri = root
                   ont = ont }
     t.AddMembers [ cls ]
     t.AddMember
       (ProvidedMethod("root", [], cls, InvokeCode = (fun a -> <@@ cls @@>)))
     t
 
-  module Provider =
+module Provider =
     [<TypeProvider>]
     type Memory(config : TypeProviderConfig) as x =
       inherit TypeProviderForNamespaces()
       do x.RegisterRuntimeAssemblyLocationAsProbingFolder config
-      let ns = "FSHarp.RDF"
+      let ns = "FSharp.RDF"
       let asm = Assembly.GetExecutingAssembly()
-      let op = ProvidedTypeDefinition(asm, ns, "Memory", Some typeof<obj>)
+      let op = ProvidedTypeDefinition(asm, ns, "OntologyProvider", Some typeof<obj>)
 
       let parameters =
         [ ProvidedStaticParameter("Path", typeof<string>)
-          ProvidedStaticParameter("BaseUri", typeof<string>)
-          ProvidedStaticParameter("NamespaceMappings", typeof<string>) ]
+          ProvidedStaticParameter("BaseUri", typeof<string>) ]
 
       let (++) x y = Path.Combine(x, y)
 
       let create() =
         let init (typeName : string) (parameters : obj array) =
           match parameters with
-          | [| :? string as path; :? string as baseUri; :? string as nsmap |] ->
+          | [| :? string as path; :? string as baseUri; |] ->
             let erased =
               ProvidedTypeDefinition(asm, ns, typeName, Some(typeof<obj>))
-            let nsmap = parse nsmap
-            let om = OntologyManager()
-            let ctx = Reasoning.ReasoningContext.create (om.loadFile path)
-            Generator.root erased nsmap (Uri.Uri baseUri) (om.schema ctx)
-          | _ ->
+            let ctx = Ontology.loadFile path
+            Generator.root erased (Uri.from baseUri) (Ontology.cls ctx)
+          | e ->
             raise
-              (ArgumentException(sprintf "Invalid parameters %A" parameters))
+              (ArgumentException(sprintf "Invalid parameters %A %A" parameters e))
         op.DefineStaticParameters(parameters, init)
         op
 
       do x.AddNamespace(ns, [ create() ])
 
-  [<TypeProviderAssembly>]
-  do ()
+[<TypeProviderAssembly>]
+do ()

@@ -82,9 +82,9 @@
     <Compile Include="Ontology.fs" />
     <Compile Include="JsonLd.fs" />
     <Compile Include="Sparql.fs" />
-    <Compile Include="Schema.fs" />
     <Compile Include="Assertion.fs" />
     <Compile Include="ResultSet.fs" />
+    <Compile Include="Provider.fs" />
     <None Include="Script.fsx" />
   </ItemGroup>
   <PropertyGroup>
