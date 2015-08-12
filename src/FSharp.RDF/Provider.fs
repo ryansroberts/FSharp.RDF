@@ -78,10 +78,10 @@ module private Generator =
     let one p =
       let n = typeName ctx.uri
       let field = ProvidedField("_" + n, restriction)
-      field.SetFieldAttributes(FieldAttributes.Private)
+      field.SetFieldAttributes(FieldAttributes.Private ||| FieldAttributes.Static)
       let prop =
         ProvidedProperty
-          (n, restriction,
+          (n, restriction, IsStatic = true,
            GetterCode = (fun [ this ] -> <@@ Expr.FieldGet(this, field) @@>))
       (prop, field, restriction)
 
@@ -91,10 +91,10 @@ module private Generator =
       restriction.AddMember lt
       let n = typeName ctx.uri
       let field = ProvidedField("_" + n, lt)
-      field.SetFieldAttributes(FieldAttributes.Private)
+      field.SetFieldAttributes(FieldAttributes.Private ||| FieldAttributes.Static)
       let prop =
         ProvidedProperty
-          (n, lt,
+          (n, lt, IsStatic = true,
            GetterCode = (fun [ this ] -> <@@ Expr.FieldGet(this, field) @@>))
       (prop, field, restriction)
 
@@ -138,15 +138,13 @@ module private Generator =
     let cls =
       ProvidedTypeDefinition(typeName ctx.uri, Some typeof<OntologyNode>)
     cls.AddXmlDoc(sprintf """
-        <summary>
             Equivalents: %s
-        </summary>
-        <remarks>
+
             %s
-        </remarks>
+            %A
     """ (className cs) (cs.Comments
                         |> localisedAnnotations
-                        |> Seq.fold (+) ""))
+                        |> Seq.fold (+) "") cs) 
     let ctor = ProvidedConstructor([])
     let ctorInfo =
       typeof<Class>
@@ -157,8 +155,7 @@ module private Generator =
     cls.AddMember ctor
     if not (Set.isEmpty cs.Subtypes) then
       (fun () ->
-      [ for sub in cs.Subtypes do
-          yield classNode { ctx with uri = sub } ])
+      [ for sub in cs.Subtypes -> classNode { ctx with uri = sub } ])
       |> cls.AddMembersDelayed
     if not (Set.isEmpty cs.ObjectProperties) then
       let op = ProvidedTypeDefinition("ObjectProperties", Some typeof<obj>)

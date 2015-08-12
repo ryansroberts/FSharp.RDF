@@ -261,7 +261,7 @@ module Ontology =
             (manager.Value.loadOntologyFromOntologyDocument (java.io.File(p)))
           |> reason
         with :? OWLOntologyAlreadyExistsException as e ->
-          Ontology(manager.Value.getOntology (e.getDocumentIRI())) |> reason
+          Ontology(manager.Value.getOntology (e.getOntologyID() )) |> reason
 
       static member cls ctx (iri : string) =
         let cs = (ctx.DataFactory.getOWLClass(IRI.create iri).asOWLClass())

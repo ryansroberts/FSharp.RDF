@@ -223,6 +223,11 @@ module graph =
       let g = (Graph(new VDS.RDF.Graph()))
       Graph.defaultPrefixes baseUri xp g
 
+    static member unnamed xp =
+      let (Graph g) = Graph.empty (Uri.from "http://mutable") xp
+      g.BaseUri <- ( null :> System.Uri )
+      Graph g
+
     static member threadSafe (Graph g) =
       let g' = new ThreadSafeGraph(g.Triples)
       g'.BaseUri <- g.BaseUri
