@@ -1,7 +1,5 @@
-type file
+type project
 id FSharp.RDF
 authors Ryan Roberts
 description
     Functional RDF
-files
-    bin ==> lib
