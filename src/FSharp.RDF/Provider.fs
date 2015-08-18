@@ -192,5 +192,3 @@ module Provider =
 
       do x.AddNamespace(ns, [ create() ])
 
-[<TypeProviderAssembly>]
-do ()

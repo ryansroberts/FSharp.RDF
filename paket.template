@@ -1,5 +1,0 @@
-type project
-id FSharp.RDF
-authors Ryan Roberts
-description
-    Functional RDF
