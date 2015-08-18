@@ -257,9 +257,12 @@ module Ontology =
 
       static member loadFile (p : string) =
         try
-          Ontology
-            (manager.Value.loadOntologyFromOntologyDocument (java.io.File(p)))
-          |> reason
+          if p.StartsWith "http" then
+            Ontology (manager.Value.loadOntologyFromOntologyDocument (IRI.create p))
+            |> reason
+          else
+            Ontology (manager.Value.loadOntologyFromOntologyDocument (java.io.File(p)))
+            |> reason
         with :? OWLOntologyAlreadyExistsException as e ->
           Ontology(manager.Value.getOntology (e.getOntologyID() )) |> reason
 

@@ -67,40 +67,11 @@ module private Generator =
            </summary>
        """ (string uri))
 
-  let objectProperty (ctx : GenerationContext) (p : ObjectProperty) =
-    let (uri, ch, _) = p
+  let objectProperty (uri,c,cx) =
 
-    let restriction =
-      let restriction = ProvidedTypeDefinition(typeName uri, Some typeof<obj>)
-      restriction.AddXmlDoc <| restrictionDocs p
-      restriction
-
-    let one p =
-      let n = typeName ctx.uri
-      let field = ProvidedField("_" + n, restriction)
-      field.SetFieldAttributes(FieldAttributes.Private ||| FieldAttributes.Static)
-      let prop =
-        ProvidedProperty
-          (n, restriction, IsStatic = true,
-           GetterCode = (fun [ this ] -> <@@ Expr.FieldGet(this, field) @@>))
-      (prop, field, restriction)
-
-    let some p =
-      let lt =
-        typedefof<List<_>>.MakeGenericType([| restriction :> System.Type |])
-      restriction.AddMember lt
-      let n = typeName ctx.uri
-      let field = ProvidedField("_" + n, lt)
-      field.SetFieldAttributes(FieldAttributes.Private ||| FieldAttributes.Static)
-      let prop =
-        ProvidedProperty
-          (n, lt, IsStatic = true,
-           GetterCode = (fun [ this ] -> <@@ Expr.FieldGet(this, field) @@>))
-      (prop, field, restriction)
-
-    match ch with
-    | Characteristics.Functional -> one p
-    | _ -> some p
+    let restriction = ProvidedTypeDefinition(typeName uri, Some typeof<ObjectPropertyNode>)
+    restriction.AddXmlDocDelayed (fun ()-> restrictionDocs (uri,c,cx))
+    restriction
 
   let individualType (ctx : GenerationContext) cs
       (rx : (ProvidedProperty * ProvidedField) list) =
@@ -154,16 +125,16 @@ module private Generator =
     ctor.InvokeCode <- fun args -> <@@ () @@>
     cls.AddMember ctor
     if not (Set.isEmpty cs.Subtypes) then
+      let op = ProvidedTypeDefinition("SubClasses", Some typeof<obj>)
+      cls.AddMember op
       (fun () ->
-      [ for sub in cs.Subtypes -> classNode { ctx with uri = sub } ])
-      |> cls.AddMembersDelayed
+       [ for sub in cs.Subtypes -> classNode { ctx with uri = sub } ])
+      |> op.AddMembersDelayed
     if not (Set.isEmpty cs.ObjectProperties) then
       let op = ProvidedTypeDefinition("ObjectProperties", Some typeof<obj>)
       cls.AddMember op
       (fun () ->
-      [ for p in cs.ObjectProperties do
-          let (uri, _, _) = p
-          yield objectPropertyType { ctx with uri = uri } p ])
+       [ for p in cs.ObjectProperties -> objectProperty p ])
       |> op.AddMembersDelayed
     if not (Set.isEmpty cs.DataProperties) then
       let op = ProvidedTypeDefinition("DataProperties", Some typeof<obj>)
@@ -172,23 +143,7 @@ module private Generator =
       [ for (p, r) in cs.DataProperties do
           yield dataPropertyType { ctx with uri = p } r ])
       |> op.AddMembersDelayed
-    let op = ProvidedTypeDefinition("Restrictions", Some typeof<obj>)
-    cls.AddMember op
-    (fun () ->
-    [ let rx =
-        [ for p in cs.ObjectProperties do
-            let (uri, _, _) = p
-            let (prop, field, restriction) =
-              objectProperty { ctx with uri = uri } p
-            op.AddMember restriction
-            yield (prop, field) ]
-
-      let (ctor, individualType) = individualType ctx cs rx
-      for p, f in rx do
-        yield p :> MemberInfo
-        yield f :> MemberInfo
-      yield individualType :> MemberInfo ])
-    |> cls.AddMembersDelayed
+      cls.AddMember op
     cls
 
   and objectPropertyType (ctx : GenerationContext) r =

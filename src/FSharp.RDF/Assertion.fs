@@ -17,7 +17,7 @@ module Assertion =
     //probably because System.Uri used to explode if you tried
     let private uriFromPossibleQname (g : IGraph) (u : System.Uri) =
       match u.Scheme with
-      | "http" | "https" -> g.CreateUriNode u
+      | "http" | "https" | "file" -> g.CreateUriNode u
       | _ -> g.CreateUriNode(string u)
 
 
@@ -75,6 +75,10 @@ module Assertion =
     let blank p xst = (P p, O(Node.Blank(Blank.Blank(lazy xst)), lazy []))
     let resource s xst = R(S s, xst)
     let triple s (p, o) = (S s, P p, O o)
+
+  module rdfs =
+    open rdf
+    let subClassOf t = objectProperty (uri "rdfs:subClassOf") t
 
   module owl =
     let individual s xt xst =

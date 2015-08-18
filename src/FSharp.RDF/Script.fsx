@@ -19,32 +19,20 @@ open FSharp.RDF
 open System.IO
 open Swensen.Unquote
 open FSharp.RDF.Ontology
-open FSharp.RDF.Assertion
 
 
-let g = Graph.empty !!"http://lol" []
+
+let g = Graph.unnamed []
 let sb = System.Text.StringBuilder()
 
 Graph.writeTtl (toString sb) g
 printf "%s" (string sb)
 
 [<Literal>]
-let pizzaF = __SOURCE_DIRECTORY__ + "/Pizza.ttl"
+let pizzaF = "/Users/ryanroberts/code/ontologies/ns/qualitystandard.omn"
 
 
-let o = Ontology.loadFile "/Users/ryanroberts/code/FSharp.RDF/src/FSharp.RDF/pizza.ttl"
+let o = Ontology.loadFile pizzaF
 
-do
-  let {
-    Ontology = o2
-    Reasoner = r
-    DataFactory =d
-    } = o
-  let clss = o2.getClassesInSignature()
 
-  printf "%A" clss
-Ontology.cls o "http://www.w3.org/2002/07/owl#Thing"
-
-type pizza = FSharp.RDF.OntologyProvider<pizzaF,"http://www.w3.org/2002/07/owl#Thing">
-
-type thing = pizza.``http://www.w3.org/2002/07/owl#Thing``
+Ontology.cls o "http://ld.nice.org.uk/ns/qualitystandard#QualityStandard"
