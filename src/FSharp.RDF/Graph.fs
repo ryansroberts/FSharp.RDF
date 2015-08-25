@@ -155,6 +155,9 @@ module graph =
     new System.IO.StringWriter(s) :> System.IO.TextWriter
   let toFile (p) =
     new System.IO.StreamWriter(System.IO.File.OpenWrite p) :> System.IO.TextWriter
+  let appendFile (p) =
+      new System.IO.StreamWriter(System.IO.File.Open(p,System.IO.FileMode.Open ||| System.IO.FileMode.Append) ) :> System.IO.TextWriter
+
   let toStream (s : System.IO.Stream) =
     new System.IO.StreamWriter(s) :> System.IO.TextWriter
   let fromString (s : string) =
