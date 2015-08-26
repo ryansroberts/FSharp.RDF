@@ -69,7 +69,7 @@ type Node =
              | t ->
                (P(Uri.from (t.Predicate :?> IUriNode).Uri), Object.from t.Object))
         |> Seq.toList
-      Node.Blank(Blank.Blank(lazy traverseBlank()))
+      Node.Blank(Blank.Blank(traverseBlank()))
     | _ -> failwith (sprintf "Unknown node %A" (n.GetType()))
 
   static member from (u : string) = Node.Uri(Uri.from u)
@@ -102,12 +102,15 @@ and Object =
     let n = Node.from u
     match n with
     | Node.Blank(Blank.Blank(xs)) ->
-      O(n, lazy [ R(Subject.from "http://anon", xs.Value) ]) //System.Uri will choke if the scheme is blank, so hack
+      O(n, lazy [ R(Subject.from "http://anon", xs) ]) //System.Uri will choke if the scheme is blank, so hack
     | Node.Uri(Sys uri) ->
       O(n,
         lazy let uri = u.Graph.CreateUriNode(uri)
              u.Graph.GetTriplesWithSubject uri |> Resource.from)
-    | n -> O(n, lazy [])
+      | n -> O(n, lazy [])
+  override __.ToString() =
+    match __ with
+      | O(_,xs) -> sprintf "%A" xs.Value
 
 and Statement = Predicate * Object
 
@@ -127,10 +130,7 @@ and Resource =
     |> Seq.toList
 
 and Blank =
-  | Blank of Lazy<Statement list>
-  override x.ToString() =
-    match x with
-    | Blank xs -> sprintf "%A" (xs.Value)
+  | Blank of Statement list
 
 type Graph =
   | Graph of IGraph
@@ -146,8 +146,8 @@ module wellknown =
 
 [<AutoOpen>]
 module graph =
-  let hasSubject (S s) (P p, O(o, xs)) = (S s, P p, O(o, xs))
-  let hasPredicate (P p) (O(o, xs)) = (P p, O(o, xs))
+  let private hasSubject (S s) (P p, O(o, xs)) = (S s, P p, O(o, xs))
+  let private hasPredicate (P p) (O(o, xs)) = (P p, O(o, xs))
 
   open prefixes
 
@@ -155,8 +155,7 @@ module graph =
     new System.IO.StringWriter(s) :> System.IO.TextWriter
   let toFile (p) =
     new System.IO.StreamWriter(System.IO.File.OpenWrite p) :> System.IO.TextWriter
-  let appendFile (p) =
-      new System.IO.StreamWriter(System.IO.File.Open(p,System.IO.FileMode.Open ||| System.IO.FileMode.Append) ) :> System.IO.TextWriter
+  let appendFile (p) = System.IO.File.AppendText p :> System.IO.TextWriter
 
   let toStream (s : System.IO.Stream) =
     new System.IO.StreamWriter(s) :> System.IO.TextWriter
@@ -242,7 +241,7 @@ module graph =
     static member writeTtl = write (formatWrite.ttl())
     static member loadTtl = load (parse.ttl())
 
-module triple =
+module private triple =
   let uriNode u (Graph g) = g.CreateUriNode(Uri.toSys u)
   let private rdfType =
     Uri.from "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
@@ -373,3 +372,4 @@ module xsd =
     function
     | Node.Literal(Literal.DateTimeOffset d) -> d
     | n -> failwith "%A is not a datetime node"
+

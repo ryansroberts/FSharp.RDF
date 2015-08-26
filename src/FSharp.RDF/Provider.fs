@@ -162,7 +162,6 @@ module private Generator =
     t
 
 module Provider =
-    [<TypeProvider>]
     type Memory(config : TypeProviderConfig) as x =
       inherit TypeProviderForNamespaces()
       do x.RegisterRuntimeAssemblyLocationAsProbingFolder config
@@ -191,4 +190,7 @@ module Provider =
         op
 
       do x.AddNamespace(ns, [ create() ])
+
+[<TypeProviderAssembly>]
+do ()
 

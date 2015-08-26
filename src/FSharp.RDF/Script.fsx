@@ -29,10 +29,10 @@ Graph.writeTtl (toString sb) g
 printf "%s" (string sb)
 
 [<Literal>]
-let pizzaF = "/Users/ryanroberts/code/ontologies/ns/qualitystandard.omn"
+let pizzaF = "/Users/ryanroberts/code/FSharp.RDF/src/FSharp.RDF/pizza.ttl"
 
 
 let o = Ontology.loadFile pizzaF
 
 
-Ontology.cls o "http://ld.nice.org.uk/ns/qualitystandard#QualityStandard"
+Ontology.cls o "http://www.w3.org/2002/07/owl#Thing"
