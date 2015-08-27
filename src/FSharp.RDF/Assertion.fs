@@ -27,7 +27,7 @@ module Assertion =
         | (P p, O(Node.Blank(Blank.Blank(xst')), _)) -> //Blank node
           let b = g.CreateBlankNode()
           yield Triple(s, uriFromPossibleQname g (Uri.toSys p), b)
-          for (p, o) in xst'.Value do
+          for (p, o) in xst' do
             yield! assrtTriple b (p, o)
         | (P p, O(Node.Uri(o), xr)) -> //Dependent resources
           let o = uriFromPossibleQname g (Uri.toSys o)
@@ -72,7 +72,7 @@ module Assertion =
     let one p o xst = ((P p), O(Node.Uri o, lazy [ R(S o, xst) ]))
     let a t = objectProperty (uri "rdf:type") t
     let dataProperty p o = ((P p), O(o, lazy []))
-    let blank p xst = (P p, O(Node.Blank(Blank.Blank(lazy xst)), lazy []))
+    let blank p xst = (P p, O(Node.Blank(Blank.Blank(xst)), lazy []))
     let resource s xst = R(S s, xst)
     let triple s (p, o) = (S s, P p, O o)
 
@@ -81,6 +81,7 @@ module Assertion =
     let subClassOf t = objectProperty (uri "rdfs:subClassOf") t
 
   module owl =
+    open rdf
     let individual s xt xst =
       R(S s,
         [ yield rdf.a !!"owl:NamedIndividual"
@@ -90,5 +91,5 @@ module Assertion =
     let cls s xt xst =
       R(S s,
         [ yield rdf.a !!"owl:Class"
-          for t in xt -> rdf.a t ]
+          for t in xt -> objectProperty (uri "owl:subClassOf")  t ]
         @ xst)

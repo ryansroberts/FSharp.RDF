@@ -45,7 +45,7 @@ module JsonLD =
 
         | Node.Blank (Blank xs) ->
           let name = n.GetName()
-          xs.Value
+          xs
           |> Seq.map  (fun (p,o) -> (BNode name,p,o))
           |> Seq.iter (triple n d)
 
