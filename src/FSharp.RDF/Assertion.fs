@@ -85,11 +85,18 @@ module Assertion =
     let individual s xt xst =
       R(S s,
         [ yield rdf.a !!"owl:NamedIndividual"
-          for t in xt -> rdf.a t ]
+          for t in xt -> a t]
         @ xst)
 
     let cls s xt xst =
       R(S s,
         [ yield rdf.a !!"owl:Class"
-          for t in xt -> objectProperty (uri "owl:subClassOf")  t ]
+          for t in xt -> objectProperty (uri "rdfs:subClassOf")  t ]
         @ xst)
+
+    let pun s xt xst =
+      R(S s,
+           [ yield rdf.a !!"owl:NamedIndividual"
+             yield rdf.a !!"owl:Class"
+             for t in xt -> objectProperty (uri "rdfs:subClassOf")  t ]
+           @ xst)
