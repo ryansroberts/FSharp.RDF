@@ -264,11 +264,11 @@ Target "Release" (fun _ ->
 
 
 Target "BuildPackage" (fun _ ->
-  let n = Environment.GetEnvironmentVariable "TRAVIS_BUILD_NUMBER"
-  let v = sprintf "1.0.%s" n
+  let n = Environment.GetEnvironmentVariable "DRONE_BUILD_NUMBER"
+  let v = sprintf "1.1.%s" n
   [
    ("mono",".paket/paket.exe pack output . version " + v)
-   ("mono",sprintf ".paket/paket.exe push url https://www.nuget.org file FSharp.RDF.%s.nupkg" v)
+   ("mono",sprintf ".paket/paket.exe push apikey f3709835-b06d-444a-87dc-18786597f812 url https://www.nuget.org file FSharp.RDF.%s.nupkg" v)
   ]
   |> List.iter (fun (v,a) -> Shell.Exec (v,args=a) |> ignore)
 )
