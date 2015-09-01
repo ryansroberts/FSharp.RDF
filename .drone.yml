@@ -1,0 +1,4 @@
+image: nice/ld-docker-build:latest
+script:
+  - ./.drone/build.sh
+   
