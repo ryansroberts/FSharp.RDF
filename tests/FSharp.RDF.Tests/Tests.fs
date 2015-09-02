@@ -142,7 +142,7 @@ base:id2 base:someDataProperty "value3"^^xsd:string;
            rdf:type base:LinkedType.
 """)
 
-  (Graph.diff g g').AreEqual =? true
+  Diff.equal (Graph.diff g g') =? true
 
 
 [<Fact>]
@@ -168,7 +168,7 @@ let ``Streaming resources`` () =
   |> Seq.iter (fun _ -> ())
 
   let g' = Graph.loadTtl (fromString (sb.ToString()))
-  (Graph.diff g g').AreEqual =? true
+  Diff.equal (Graph.diff g g') =? true
 
 
 open JsonLD.Core

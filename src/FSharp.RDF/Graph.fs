@@ -98,6 +98,7 @@ and Predicate =
 and Object =
   | O of Node * Lazy<Resource list>
   static member from u = O(Node.Uri(Uri.Sys u), lazy [])
+
   static member from (u : INode) =
     let n = Node.from u
     match n with
@@ -107,10 +108,11 @@ and Object =
       O(n,
         lazy let uri = u.Graph.CreateUriNode(uri)
              u.Graph.GetTriplesWithSubject uri |> Resource.from)
-      | n -> O(n, lazy [])
+    | n -> O(n, lazy [])
+
   override __.ToString() =
     match __ with
-      | O(_,xs) -> sprintf "%A" xs.Value
+    | O(_, xs) -> sprintf "%A" xs.Value
 
 and Statement = Predicate * Object
 
@@ -135,6 +137,49 @@ and Blank =
 type Graph =
   | Graph of IGraph
 
+type Diff =
+  | Diff of VDS.RDF.GraphDiffReport
+  with static member equal (Diff x) = x.AreEqual
+       override x.ToString() =
+         String.Join("\n",
+                [ let (Diff report) = x
+                  let formatter = NTriplesFormatter()
+                  if (report.AreEqual) then
+                    yield ("Graphs are Equal")
+                    yield ""
+                    yield ("Blank Node Mapping between Graphs:")
+                    for kvp in report.Mapping do
+                      yield (kvp.Key.ToString(formatter) + " => "
+                             + kvp.Value.ToString(formatter))
+                  else
+                    yield ("Graphs are non-equal")
+                    yield ""
+                    yield ("Triples added to 1st Graph to give 2nd Graph:")
+                    for t in report.AddedTriples do
+                      yield (t.ToString(formatter))
+                    yield ""
+                    yield ("Triples removed from 1st Graph to given 2nd Graph:")
+                    for t in report.RemovedTriples do
+                      yield (t.ToString(formatter))
+                    yield ""
+                    yield ("Blank Node Mapping between Graphs:")
+                    for kvp in report.Mapping do
+                      yield ((kvp.Key.ToString(formatter)) + " => "
+                             + (kvp.Value.ToString(formatter)))
+                    yield ""
+                    yield ("MSGs added to 1st Graph to give 2nd Graph:")
+                    for msg in report.AddedMSGs do
+                      for t in msg.Triples do
+                        yield (t.ToString(formatter))
+                      yield ""
+                    yield ""
+                    yield ("MSGs removed from 1st Graph to give 2nd Graph:")
+                    for msg in report.RemovedMSGs do
+                      for t in msg.Triples do
+                        yield (t.ToString(formatter))
+                      yield "" ])
+  
+
 module prefixes =
   let rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
   let owl = "http://www.w3.org/2002/07/owl#"
@@ -156,7 +201,6 @@ module graph =
   let toFile (p) =
     new System.IO.StreamWriter(System.IO.File.OpenWrite p) :> System.IO.TextWriter
   let appendFile (p) = System.IO.File.AppendText p :> System.IO.TextWriter
-
   let toStream (s : System.IO.Stream) =
     new System.IO.StreamWriter(s) :> System.IO.TextWriter
   let fromString (s : string) =
@@ -208,7 +252,7 @@ module graph =
                                    ("owl", Uri.from owl) ]
                                  @ xp) g
 
-    static member diff (Graph g) (Graph g') = g.Difference g'
+    static member diff (Graph g) (Graph g') = g.Difference g' |> Diff
 
     static member print (Graph g) =
       let s = System.Text.StringBuilder()
@@ -227,7 +271,7 @@ module graph =
 
     static member unnamed xp =
       let (Graph g) = Graph.empty (Uri.from "http://mutable") xp
-      g.BaseUri <- ( null :> System.Uri )
+      g.BaseUri <- (null :> System.Uri)
       Graph g
 
     static member threadSafe (Graph g) =
@@ -372,4 +416,3 @@ module xsd =
     function
     | Node.Literal(Literal.DateTimeOffset d) -> d
     | n -> failwith "%A is not a datetime node"
-
