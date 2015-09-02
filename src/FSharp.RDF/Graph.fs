@@ -178,7 +178,7 @@ type Diff =
                       for t in msg.Triples do
                         yield (t.ToString(formatter))
                       yield "" ])
-  
+
 
 module prefixes =
   let rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -337,7 +337,7 @@ module resource =
 
   let (|Is|_|) u (R(S s, _)) =
     match u = s with
-    | true -> Some u
+    | true -> Some Is
     | _ -> None
 
   let private noneIfEmpty =
@@ -401,7 +401,8 @@ module resource =
 
   let (|HasType|_|) t =
     function
-    | ObjectProperty wellknown.rdftype xs -> List.filter ((=) t) xs |> listOfOne
+    | ObjectProperty wellknown.rdftype xs ->
+        if List.exists ((=) t) xs then Some HasType else None
     | _ -> None
 
 module xsd =

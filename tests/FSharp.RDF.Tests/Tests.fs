@@ -47,19 +47,19 @@ let r3 = (Resource.fromSubject item3 g) |> Seq.head
 [<Fact>]
 let ``Pattern match id``() =
   <@ true = match r1 with
-            | Is item1 _ -> true
+            | Is item1 -> true
             | _ -> false @>
 
 [<Fact>]
 let ``Fail to pattern match id``() =
   <@ match r1 with
-     | Is item3 _ -> true
+     | Is item3 -> true
      | _ -> false @>
 
 [<Fact>]
 let ``Pattern match type``() =
   test <@ true = match r1 with
-                 | HasType type1 _ -> true
+                 | HasType type1 -> true
                  | _ -> false @>
 
 [<Fact>]
