@@ -172,6 +172,7 @@ let ``Streaming resources`` () =
 
 
 open JsonLD.Core
+[<Fact>]
 let ``Convert asserted resource to ld graph`` () =
   let s = ""
   let sb = new System.Text.StringBuilder(s)
@@ -193,6 +194,10 @@ let ``Convert asserted resource to ld graph`` () =
   opts.SetUseRdfType(true)
   opts.SetEmbed(System.Nullable(true))
 
-  let ld = Resource.toJsonLD(JsonLdOptions()) [r]
+  let context = Newtonsoft.Json.Linq.JObject.Parse """{
+  "@context": {}
+}"""
 
-  (string ld) =? ""
+  let ld = Resource.compatctedJsonLD (opts) context [r]
+
+  ()

@@ -115,7 +115,7 @@ module private Generator =
             %A
     """ (className cs) (cs.Comments
                         |> localisedAnnotations
-                        |> Seq.fold (+) "") cs) 
+                        |> Seq.fold (+) "") cs)
     let ctor = ProvidedConstructor([])
     let ctorInfo =
       typeof<Class>

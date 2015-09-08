@@ -78,8 +78,9 @@ module JsonLD =
                                Uri.toSys p |> string,
                                obj)
 
+
     type Resource with
-      static member toJsonLD (o:JsonLdOptions) xr =
+      static member compatctedJsonLD (o:JsonLdOptions) (context:Newtonsoft.Json.Linq.JObject) xr =
         let n = namer()
         let d = RDFDataset()
         Seq.collect Resource.asTriples xr
@@ -87,5 +88,6 @@ module JsonLD =
         |> Seq.iter (triple n d)
 
         let api = JsonLdApi(o)
-        api.Normalize(d) |> ignore
-        api.FromRDF d
+        api.Normalize(d)
+        let rdf = api.FromRDF(d) :> Newtonsoft.Json.Linq.JToken
+        JsonLdProcessor.Compact(rdf,new Context(context),o)
