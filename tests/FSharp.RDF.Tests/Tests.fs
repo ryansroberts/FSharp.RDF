@@ -1,7 +1,7 @@
 module FSharp.RDF.Tests
 
 open FSharp.RDF
-open Xunit
+open NUnit.Framework
 open System.IO
 open Swensen.Unquote
 
@@ -44,37 +44,37 @@ let g = Graph.loadTtl (fromString functionalProperties)
 let r1 = (Resource.fromSubject item1 g) |> Seq.head
 let r3 = (Resource.fromSubject item3 g) |> Seq.head
 
-[<Fact>]
+[<Test>]
 let ``Pattern match id``() =
-  <@ true = match r1 with
-            | Is item1 -> true
-            | _ -> false @>
+  test <@ true = match r1 with
+                 | Is item1 -> true
+                 | _ -> false @>
 
-[<Fact>]
+[<Test>]
 let ``Fail to pattern match id``() =
-  <@ match r1 with
-     | Is item3 -> true
-     | _ -> false @>
+  test <@ match r1 with
+          | Is item3 -> false
+          | _ -> true @>
 
-[<Fact>]
+[<Test>]
 let ``Pattern match type``() =
   test <@ true = match r1 with
                  | HasType type1 -> true
                  | _ -> false @>
 
-[<Fact>]
+[<Test>]
 let ``Fail to pattern match type``() =
   test <@ false = match r1 with
                   | HasType type2 _ -> true
                   | _ -> false @>
 
-[<Fact>]
+[<Test>]
 let ``Map object``() =
   test <@ [ "avalue" ] = match r3 with
                          | DataProperty pr3 xsd.string values -> values
                          | _ -> [] @>
 
-[<Fact>]
+[<Test>]
 let ``Traverse an object property``() =
   test <@ [ true ] = [ for r in (Resource.fromSubject item1 g) do
                          match r with
@@ -82,7 +82,7 @@ let ``Traverse an object property``() =
                            for r' in traverse next do
                              yield true ] @>
 
-[<Fact>]
+[<Test>]
 let ``Traverse a blank node``() =
   test <@ [ true ] = [ for r in (Resource.fromSubject item4 g) do
                          match r with
@@ -93,7 +93,7 @@ let ``Traverse a blank node``() =
 open Assertion
 
 open rdf
-[<Fact>]
+[<Test>]
 let ``Assert a resource``() =
   let s = ""
   let sb = new System.Text.StringBuilder(s)
@@ -112,7 +112,8 @@ let ``Assert a resource``() =
 
         one !!"base:someOtherObjectProperty" !!"base:id2"
           [ a !!"base:LinkedType"
-            dataProperty !!"base:someDataProperty" ("value3"^^xsd.string) ]]
+            dataProperty !!"base:someDataProperty" ("value3"^^xsd.string) ]
+        dataProperty !!"base:xmlstuff" ("<test>value</test>"^^xsd.xmlliteral)]
   [r]
   |> Assert.graph og
   |> Graph.writeTtl (toString sb)
@@ -136,16 +137,18 @@ base:id base:someBlankProperty [rdf:type base:BankType ;
           base:someDataProperty "value"^^xsd:string;
           base:someObjectProperty base:SomeOtherId;
           base:someOtherObjectProperty base:id2;
+          base:xmlstuff "<test>value</test>"^^<rdf:XMLLiteral>;
           base:someNonQname <http://google.com/stuff>;
           rdf:type base:Type.
 base:id2 base:someDataProperty "value3"^^xsd:string;
            rdf:type base:LinkedType.
 """)
 
+
   Diff.equal (Graph.diff g g') =? true
 
 
-[<Fact>]
+[<Test>]
 let ``Streaming resources`` () =
   let s = ""
   let sb = new System.Text.StringBuilder(s)
@@ -172,7 +175,7 @@ let ``Streaming resources`` () =
 
 
 open JsonLD.Core
-[<Fact>]
+[<Test>]
 let ``Convert asserted resource to ld graph`` () =
   let s = ""
   let sb = new System.Text.StringBuilder(s)

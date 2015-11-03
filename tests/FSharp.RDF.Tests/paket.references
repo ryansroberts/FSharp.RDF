@@ -1,4 +1,5 @@
 dotnetrdf
 unquote
-xunit
 json-ld.net
+nunit
+NUnit.Runners

@@ -56,7 +56,11 @@ type Node =
     | :? IUriNode as n -> Node.Uri(Uri.Sys n.Uri)
     | :? ILiteralNode as n ->
       (match n with
-       | :? StringNode as s -> s.AsString() |> Literal.String
+       | :? StringNode as s ->
+         match s.DataType with
+         | null -> s.AsString() |> Literal.String
+         | dt when dt.AbsoluteUri = "rdf.xmlLiteral" -> s.AsString() |> Literal.XMLLiteral
+         | dt -> failwith (dt.AbsoluteUri + " not supported")
        | :? DateNode as d -> d.AsDateTimeOffset() |> Literal.DateTimeOffset
        | :? DateTimeNode as d -> d.AsDateTimeOffset() |> Literal.DateTimeOffset
        | _ -> n.Value |> Literal.String)
@@ -85,6 +89,7 @@ type Node =
 and Literal =
   | String of string
   | DateTimeOffset of System.DateTimeOffset
+  | XMLLiteral of string
 
 and Subject =
   | S of Uri

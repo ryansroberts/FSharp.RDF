@@ -11,6 +11,9 @@
 #r "../../lib/owlapi.net_release_1_0_0/Reasoners/Pellet/Cognitum.OwlApi.Net.Pellet.dll"
 #I "../../lib/owlapi.net_release_1_0_0/Reasoners/Pellet"
 #r "../../lib/owlapi.net_release_1_0_0/Reasoners/Pellet/pellet.dll"
+
+
+#I "../../bin"
 #r "../../packages/dotNetRDF/lib/net40/dotNetRDF.dll"
 #r "../../packages/VDS.Common/lib/net40-client/VDS.Common.dll"
 #r "../../bin/FSharp.RDF.dll"
@@ -19,20 +22,60 @@ open FSharp.RDF
 open System.IO
 open Swensen.Unquote
 open FSharp.RDF.Ontology
+open resource
 
+open Assertion
 
+open rdf
 
-let g = Graph.unnamed []
-let sb = System.Text.StringBuilder()
+let s = ""
+let sb = new System.Text.StringBuilder(s)
 
-Graph.writeTtl (toString sb) g
-printf "%s" (string sb)
+let og = Graph.empty (!!"http://sometest/ns#") [("base",!!"http://sometest/ns#")]
+let r =
+    resource !!"base:id"
+      [ a !!"base:Type"
+        objectProperty !!"base:someObjectProperty" !!"base:SomeOtherId"
+        objectProperty !!"base:someNonQname" !!"http://google.com/stuff"
+        dataProperty !!"base:someDataProperty" ("value"^^xsd.string)
 
-[<Literal>]
-let pizzaF = "/Users/ryanroberts/code/FSharp.RDF/src/FSharp.RDF/pizza.ttl"
+        blank !!"base:someBlankProperty"
+          [ a !!"base:BankType"
+            dataProperty !!"base:someDataProperty" ("value2"^^xsd.string) ]
 
+        one !!"base:someOtherObjectProperty" !!"base:id2"
+          [ a !!"base:LinkedType"
+            dataProperty !!"base:someDataProperty" ("value3"^^xsd.string) ]
+        dataProperty !!"base:xmlstuff" ("<test>value</test>"^^xsd.xmlliteral)]
 
-let o = Ontology.loadFile pizzaF
+[r]
+ |> Assert.graph og
+ |> Graph.writeTtl (toString sb)
+ |> ignore
 
+let g = Graph.loadTtl (fromString (sb.ToString()))
+let g' = Graph.loadTtl (fromString """@base <http://sometest/ns#>.
 
-Ontology.cls o "http://www.w3.org/2002/07/owl#Thing"
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix prov: <http://www.w3.org/ns/prov#>.
+@prefix owl: <http://www.w3.org/2002/07/owl#>.
+@prefix git2prov: <http://nice.org.uk/ns/prov/>.
+@prefix base: <http://sometest/ns#>.
+@prefix compilation: <http://nice.org.uk/ns/compilation#>.
+@prefix cnt: <http://www.w3.org/2011/content#>.
+
+base:id base:someBlankProperty [rdf:type base:BankType ;
+                                    base:someDataProperty "value2"^^xsd:string];
+          base:someDataProperty "value"^^xsd:string;
+          base:someObjectProperty base:SomeOtherId;
+          base:someOtherObjectProperty base:id2;
+          base:xmlstuff "<test>value</test>"^^<rdf:XMLLiteral>;
+          base:someNonQname <http://google.com/stuff>;
+          rdf:type base:Type.
+base:id2 base:someDataProperty "value3"^^xsd:string;
+           rdf:type base:LinkedType.
+""")
+
+Diff.equal (Graph.diff g g')

@@ -8,10 +8,14 @@ module Assertion =
   open FSharp.RDF
 
   module Assert =
+    let toXmlLiteral (g:IGraph) (s:string) =
+      VDS.RDF.Nodes.StringNode(g,s,System.Uri("rdf:XMLLiteral"))
+
     let toVDSNode g n : INode =
       match n with
       | (Literal.String s) -> s.ToLiteral g :> INode
       | (Literal.DateTimeOffset d) -> d.ToLiteral g :> INode
+      | (Literal.XMLLiteral x) -> x |> toXmlLiteral g :> INode
 
     //Dotnetrdf doesn't accept a uri as a string, only qnames
     //probably because System.Uri used to explode if you tried
@@ -62,6 +66,7 @@ module Assertion =
   module xsd =
     let string s = Node.Literal(Literal.String s)
     let datetime d = Node.Literal(Literal.DateTimeOffset d)
+    let xmlliteral x = Node.Literal(Literal.XMLLiteral x)
 
   let uri u = (Uri.Sys(System.Uri u))
   let (!!) = uri

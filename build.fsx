@@ -118,7 +118,7 @@ Target "Build" (fun _ ->
 
 Target "RunTests" (fun _ ->
     !! testAssemblies
-    |> xUnit (fun p ->
+    |> NUnit (fun p ->
         { p with
             TimeOut = TimeSpan.FromMinutes 20.
             })
