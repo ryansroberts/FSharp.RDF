@@ -16,6 +16,7 @@ module Assertion =
       | (Literal.String s) -> s.ToLiteral g :> INode
       | (Literal.DateTimeOffset d) -> d.ToLiteral g :> INode
       | (Literal.XMLLiteral x) -> x |> toXmlLiteral g :> INode
+      | (Literal.Integer i) -> i.ToLiteral g :> INode
 
     //Dotnetrdf doesn't accept a uri as a string, only qnames
     //probably because System.Uri used to explode if you tried
@@ -67,6 +68,9 @@ module Assertion =
     let string s = Node.Literal(Literal.String s)
     let datetime d = Node.Literal(Literal.DateTimeOffset d)
     let xmlliteral x = Node.Literal(Literal.XMLLiteral x)
+    let integer (i:int) =
+      let l = System.Convert.ToInt64(i)
+      Node.Literal(Literal.Integer l)
 
   let uri u = (Uri.Sys(System.Uri u))
   let (!!) = uri
