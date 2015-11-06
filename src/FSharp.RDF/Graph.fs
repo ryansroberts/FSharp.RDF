@@ -62,6 +62,7 @@ type Node =
          | dt when dt.AbsoluteUri = "rdf.xmlLiteral" -> s.AsString() |> Literal.XMLLiteral
          | dt -> failwith (dt.AbsoluteUri + " not supported")
        | :? DateNode as d -> d.AsDateTimeOffset() |> Literal.DateTimeOffset
+       | :? NumericNode as i -> i.AsInteger() |> Literal.Integer
        | :? DateTimeNode as d -> d.AsDateTimeOffset() |> Literal.DateTimeOffset
        | _ -> n.Value |> Literal.String)
       |> Node.Literal
@@ -88,6 +89,7 @@ type Node =
 
 and Literal =
   | String of string
+  | Integer of System.Int64
   | DateTimeOffset of System.DateTimeOffset
   | XMLLiteral of string
 

@@ -46,7 +46,8 @@ let r =
         one !!"base:someOtherObjectProperty" !!"base:id2"
           [ a !!"base:LinkedType"
             dataProperty !!"base:someDataProperty" ("value3"^^xsd.string) ]
-        dataProperty !!"base:xmlstuff" ("<test>value</test>"^^xsd.xmlliteral)]
+        dataProperty !!"base:xmlstuff" ("<test>value</test>"^^xsd.xmlliteral)
+        dataProperty !!"base:intstuff" (0^^xsd.integer)]
 
 [r]
  |> Assert.graph og
@@ -72,6 +73,7 @@ base:id base:someBlankProperty [rdf:type base:BankType ;
           base:someObjectProperty base:SomeOtherId;
           base:someOtherObjectProperty base:id2;
           base:xmlstuff "<test>value</test>"^^<rdf:XMLLiteral>;
+          base:intstuff "0"^^xsd:integer;
           base:someNonQname <http://google.com/stuff>;
           rdf:type base:Type.
 base:id2 base:someDataProperty "value3"^^xsd:string;
