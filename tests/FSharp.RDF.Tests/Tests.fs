@@ -139,6 +139,7 @@ base:id base:someBlankProperty [rdf:type base:BankType ;
           base:someObjectProperty base:SomeOtherId;
           base:someOtherObjectProperty base:id2;
           base:xmlstuff "<test>value</test>"^^<rdf:XMLLiteral>;
+          base:intstuff "0"^^xsd:integer;
           base:someNonQname <http://google.com/stuff>;
           rdf:type base:Type.
 base:id2 base:someDataProperty "value3"^^xsd:string;
