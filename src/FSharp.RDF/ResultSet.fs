@@ -72,8 +72,13 @@ module Store =
 
     static member memoryFrom = Graph.loadFrom >> Memory
     static member memoryFromTTL = Graph.loadTtl >> Memory
-    static member stardog u s user pass =
-      let s = new VDS.RDF.Storage.StardogV2Connector(u,s,StardogReasoningMode.SL,user,pass)
+    static member stardog u s user pass reasoning =
+      let reasoningMode () =
+        match reasoning with
+          | true -> StardogReasoningMode.SL
+          | false -> StardogReasoningMode.None
+
+      let s = new VDS.RDF.Storage.StardogV2Connector(u,s,reasoningMode(),user,pass)
       Remote(Stardog s)
 
 
