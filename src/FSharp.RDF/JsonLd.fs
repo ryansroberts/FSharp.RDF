@@ -54,6 +54,7 @@ module JsonLD =
           match x with
             | String x -> x
             | DateTimeOffset x -> string x
+            | Integer x -> int x
 
       let data =
         match o with
@@ -61,6 +62,7 @@ module JsonLD =
             match x with
               | String x -> Some "xsd:string"
               | DateTimeOffset x -> Some "xsd:datetimeoffset"
+              | Integer x -> Some "xsd:integer"
           | _ -> None
 
       let subject =

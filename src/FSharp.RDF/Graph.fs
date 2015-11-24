@@ -424,3 +424,9 @@ module xsd =
     function
     | Node.Literal(Literal.DateTimeOffset d) -> d
     | n -> failwith "%A is not a datetime node"
+
+  let integer =
+    function
+      | Node.Literal(Literal.Integer i) -> i
+      | n -> failwith "%A is not an integer node"
+
